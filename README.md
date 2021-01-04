@@ -1,4 +1,8 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# ourchurchhome.ca
+
+The website for the Mt. Stewart, Morell, St. Peters Bay Pastoral Charge. Hosted by Vercel, using Next.js, TinaCMS, the Github API, and the Facebook Pages API.
+
+[![powered-by-vercel](https://user-images.githubusercontent.com/6855186/103556456-31071a80-4e88-11eb-90eb-9b68e74b81a7.png)](https://vercel.com?utm_source=[team-name]&utm_campaign=oss)
 
 ## Getting Started
 
