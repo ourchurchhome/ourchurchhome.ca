@@ -2,7 +2,7 @@
 title: Easter Services 2026
 date: '2026-03-15'
 category: announcement
-church: all
+church: morell
 description: Join us for Easter worship at any of our three churches across the Charge.
 ---
 Easter is almost here! We invite everyone to celebrate the resurrection of Jesus Christ with us across all three of our congregations.
