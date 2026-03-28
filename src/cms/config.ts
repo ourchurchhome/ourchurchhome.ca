@@ -109,6 +109,13 @@ export interface CollectionConfig {
    */
   development?: boolean;
   /**
+   * The public URL of the page this collection controls (e.g. "/" for the
+   * homepage singleton). When set, the editor shows a "Preview" button that
+   * base64-encodes the current form values and opens
+   * `{previewUrl}?draft={encoded}` in a new tab.
+   */
+  previewUrl?: string;
+  /**
    * Presentation overrides for specific fields, keyed by field name.
    * These are merged on top of the auto-generated field config derived
    * from the collection's Zod schema — they never replace it.
@@ -211,6 +218,11 @@ export interface ResolvedCollection {
   allowRename: boolean;
   /** Icon shown in the sidebar. Defaults to 📄 (singleton) or 📂 (group). */
   icon: string;
+  /**
+   * Optional public URL of the page this collection controls.
+   * When set, the editor shows a "Preview" button.
+   */
+  previewUrl?: string;
   /** Fields derived from the Zod schema, with overrides applied */
   fields: ResolvedField[];
   /** File extension used by this collection's content files */

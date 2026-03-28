@@ -28,6 +28,12 @@ export interface EditorLayoutProps {
    * Set to false for singletons whose slug must not be changed.
    */
   allowSlugRename?: boolean;
+  /**
+   * When set, a "Preview" button appears in the header. Clicking it
+   * base64-encodes the current form values and opens
+   * `{previewUrl}?draft={encoded}` in a new tab.
+   */
+  previewUrl?: string;
 }
 
 export function EditorLayout({
@@ -43,6 +49,7 @@ export function EditorLayout({
   initialSha,
   isNew = false,
   allowSlugRename = true,
+  previewUrl,
 }: EditorLayoutProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const [activePane, setActivePane] = useState<'fields' | 'editor'>('fields');
@@ -51,6 +58,18 @@ export function EditorLayout({
   const [slugError, setSlugError] = useState<string | null>(null);
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('unchanged');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Track live field values so the Preview button always encodes the latest state
+  const [currentValues, setCurrentValues] = useState<Record<string, unknown>>(initialValues);
+
+  // ── Undo / redo history ───────────────────────────────────────────────────
+  // Stored in refs so mutations never trigger re-renders.
+  const MAX_HISTORY = 100;
+  const historyRef = useRef<Record<string, unknown>[]>([initialValues]);
+  const historyIndexRef = useRef(0);
+  const historyDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // When non-undefined this is pushed into FieldsPane as externalValues to
+  // restore a historical snapshot without remounting the component.
+  const [restoredValues, setRestoredValues] = useState<Record<string, unknown> | undefined>(undefined);
 
   // ── Slug validation ───────────────────────────────────────────────────────────
   const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
@@ -140,10 +159,77 @@ export function EditorLayout({
 
   // Typed wrappers to satisfy FieldsPane / VisualEditor callback signatures
   const handleFieldsChange = useCallback(
-    (_values: Record<string, unknown>) => markDirty(),
+    (values: Record<string, unknown>) => {
+      setCurrentValues(values);
+      markDirty();
+      // Debounce snapshot: wait for 1s of inactivity before committing to history.
+      if (historyDebounceRef.current !== null) clearTimeout(historyDebounceRef.current);
+      historyDebounceRef.current = setTimeout(() => {
+        historyDebounceRef.current = null;
+        // Truncate any "future" entries that exist after the current index
+        // (user made a change after undoing).
+        const next = historyRef.current.slice(0, historyIndexRef.current + 1);
+        next.push(values);
+        if (next.length > MAX_HISTORY) next.shift();
+        historyRef.current = next;
+        historyIndexRef.current = next.length - 1;
+      }, 1000);
+    },
     [markDirty]
   );
   const handleBodyChange = useCallback((_md: string) => markDirty(), [markDirty]);
+
+  // ── Preview handler ───────────────────────────────────────────────────────────
+  const handlePreview = useCallback(() => {
+    if (!previewUrl) return;
+    try {
+      // Interpolate {slug} and any {fieldName} tokens in the URL template.
+      const resolvedUrl = previewUrl.replace(/\{([^}]+)\}/g, (_, key) => {
+        if (key === 'slug') return encodeURIComponent(currentSlug);
+        const val = currentValues[key];
+        return val != null ? encodeURIComponent(String(val)) : '';
+      });
+      const json = JSON.stringify(currentValues);
+      // Encode as UTF-8 bytes → binary string → base64 (matches Node's Buffer decode)
+      const bytes = new TextEncoder().encode(json);
+      const binary = String.fromCharCode(...bytes);
+      const b64 = btoa(binary);
+      window.open(`${resolvedUrl}?draft=${encodeURIComponent(b64)}`, '_blank', 'noopener');
+    } catch {
+      // Encoding failed — open the page without draft data as a fallback
+      window.open(previewUrl, '_blank', 'noopener');
+    }
+  }, [previewUrl, currentValues, currentSlug]);
+
+  // ── Undo / redo keyboard shortcuts ───────────────────────────────────────────
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const ctrl = e.ctrlKey || e.metaKey;
+      if (!ctrl) return;
+
+      if (e.key === 'z' && !e.shiftKey) {
+        // Undo
+        if (historyIndexRef.current <= 0) return;
+        e.preventDefault();
+        historyIndexRef.current -= 1;
+        const snapshot = historyRef.current[historyIndexRef.current];
+        setRestoredValues({ ...snapshot });
+        setCurrentValues(snapshot);
+        markDirty();
+      } else if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) {
+        // Redo
+        if (historyIndexRef.current >= historyRef.current.length - 1) return;
+        e.preventDefault();
+        historyIndexRef.current += 1;
+        const snapshot = historyRef.current[historyIndexRef.current];
+        setRestoredValues({ ...snapshot });
+        setCurrentValues(snapshot);
+        markDirty();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [markDirty]);
 
   // ── Unsaved-changes guard ─────────────────────────────────────────────────────
   // Covers: breadcrumb link, Cancel button, browser back, tab close.
@@ -273,6 +359,15 @@ export function EditorLayout({
         </div>
         <div className="flex items-center gap-3 shrink-0">
           {statusEl}
+          {previewUrl && (
+            <button
+              type="button"
+              onClick={handlePreview}
+              className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+            >
+              Preview ↗
+            </button>
+          )}
           <a
             href={collectionHref}
             className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
@@ -308,7 +403,7 @@ export function EditorLayout({
           ].join(' ')}
         >
           {fields.length > 0 ? (
-            <FieldsPane fields={fields} initialValues={initialValues} onChange={handleFieldsChange} />
+            <FieldsPane fields={fields} initialValues={initialValues} onChange={handleFieldsChange} externalValues={restoredValues} />
           ) : (
             <p className="text-gray-500 text-sm">No fields configured.</p>
           )}

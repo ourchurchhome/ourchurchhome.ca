@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import type { ResolvedField, FieldComponentProps } from '../config';
 import { ImageLibrary } from './ImageLibrary';
 import type { ImageEntry } from './ImageLibrary';
@@ -406,10 +406,24 @@ export interface FieldsPaneProps {
   namePrefix?: string;
   /** Called whenever any field value changes, with the full updated values map. */
   onChange?: (values: Record<string, unknown>) => void;
+  /**
+   * When set by a parent (e.g. after an undo/redo), the internal values state
+   * is synced to this snapshot. onChange is intentionally NOT called during the
+   * sync to prevent spurious history pushes.
+   */
+  externalValues?: Record<string, unknown>;
 }
 
-export function FieldsPane({ fields, initialValues, namePrefix = '', onChange }: FieldsPaneProps) {
+export function FieldsPane({ fields, initialValues, namePrefix = '', onChange, externalValues }: FieldsPaneProps) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues);
+
+  // Sync to externally-driven snapshot (undo/redo) without firing onChange.
+  useEffect(() => {
+    if (externalValues !== undefined) {
+      setValues(externalValues);
+    }
+  }, [externalValues]);
+
   const set = (key: string, v: unknown) => setValues((prev) => {
     const next = { ...prev, [key]: v };
     onChange?.(next);

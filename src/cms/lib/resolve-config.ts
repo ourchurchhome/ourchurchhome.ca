@@ -33,6 +33,7 @@ export function resolveCollections(config: CmsConfig): ResolvedCollection[] {
       // For regular collections, default to true unless explicitly disabled.
       allowRename: singleton ? false : (cc.allowRename ?? true),
       icon: cc.icon ?? (singleton ? '📄' : '📂'),
+      previewUrl: cc.previewUrl,
       fields,
       fileExtension: COLLECTION_EXTENSIONS[name] ?? 'md',
       basePath: COLLECTION_PATHS[name] ?? `src/content/${name}`,

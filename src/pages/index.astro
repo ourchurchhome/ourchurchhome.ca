@@ -1,10 +1,14 @@
 ---
+export const prerender = false;
+
 import BaseLayout from '../layouts/BaseLayout.astro';
 import { getCollection, render } from 'astro:content';
 import HeroWidget from '../components/widgets/HeroWidget.astro';
 import NewsWidget from '../components/widgets/NewsWidget.astro';
 import VisionWidget from '../components/widgets/VisionWidget.astro';
 import ChurchesWidget from '../components/widgets/ChurchesWidget.astro';
+import { setBypassCookie } from '../cms/lib/session';
+import { homepageSchema } from '../content/schemas';
 
 const bannerEntries = await getCollection('banner');
 const bannerEntry = bannerEntries[0];
@@ -12,10 +16,35 @@ const bannerEnabled = bannerEntry?.data.enabled ?? false;
 const bannerLink = bannerEntry?.data.link ?? null;
 const { Content: BannerContent } = bannerEntry ? await render(bannerEntry) : { Content: null };
 
-// ── Homepage singleton ────────────────────────────────────────────────────────
-const homepageEntries = await getCollection('homepage');
-const homepage = homepageEntries[0];
-const widgets = homepage?.data.widgets ?? [];
+// ── Draft mode ────────────────────────────────────────────────────────────────
+// If ?draft=<base64> is present the CMS has encoded unsaved widget data into
+// the URL. Decode it, validate it with the schema, and use it directly so the
+// editor sees an up-to-date preview without committing to the repo.
+// We also set __prerender_bypass so Vercel skips its ISR cache for this visitor.
+const draftParam = Astro.url.searchParams.get('draft');
+
+let widgets: NonNullable<ReturnType<typeof homepageSchema.parse>['widgets']> = [];
+
+if (draftParam) {
+  try {
+    const json = Buffer.from(draftParam, 'base64').toString('utf8');
+    const parsed = homepageSchema.safeParse(JSON.parse(json));
+    if (parsed.success) {
+      widgets = parsed.data.widgets ?? [];
+    }
+  } catch {
+    // Malformed draft param — fall back to an empty widget list
+  }
+  const bypassToken = import.meta.env.ISR_SECRET;
+  if (bypassToken) {
+    Astro.response.headers.append('Set-Cookie', setBypassCookie(bypassToken));
+  }
+} else {
+  // ── Homepage singleton ──────────────────────────────────────────────────────
+  const homepageEntries = await getCollection('homepage');
+  const homepage = homepageEntries[0];
+  widgets = homepage?.data.widgets ?? [];
+}
 ---
 
 <BaseLayout title="Home" description="Mount Stewart, Morell, St. Peters Bay Pastoral Charge — ourchurchhome.ca">

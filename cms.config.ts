@@ -17,6 +17,7 @@ export default defineConfig({
       allowCreate: false,
       allowDelete: false,
       icon: '🏠',
+      previewUrl: '/',
       fields: {
         widgets: { component: 'Widgets', label: 'Page Sections' },
       },
@@ -25,11 +26,13 @@ export default defineConfig({
       singleton: true,
       allowCreate: false,
       allowDelete: false,
+      previewUrl: '/',
       icon: '📢',
     },
     articles: {
       allowCreate: true,
       allowDelete: true,
+      previewUrl: '/articles/{slug}',
       icon: '📝',
       fields: {
         draft: { hidden: true },
@@ -39,6 +42,7 @@ export default defineConfig({
       allowCreate: false,
       allowDelete: false,
       allowRename: false,
+      previewUrl: '/churches/{slug}',
       icon: '⛪',
       fields: {
         description: { component: 'TextArea' },

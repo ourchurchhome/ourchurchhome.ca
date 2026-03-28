@@ -1,14 +1,13 @@
 ---
 export const prerender = false;
 
-import { clearSessionCookie } from '../../cms/lib/session';
+import { clearSessionCookie, clearBypassCookie } from '../../cms/lib/session';
 
-return new Response(null, {
-  status: 302,
-  headers: {
-    Location: '/cms/logout/success',
-    'Set-Cookie': clearSessionCookie(),
-  },
-});
+const headers = new Headers();
+headers.set('Location', '/cms/logout/success');
+headers.append('Set-Cookie', clearSessionCookie());
+headers.append('Set-Cookie', clearBypassCookie());
+
+return new Response(null, { status: 302, headers });
 ---
 

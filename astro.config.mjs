@@ -10,7 +10,11 @@ export default defineConfig({
   // CMS pages opt out individually with: export const prerender = false
   // The Vercel adapter deploys those pages as Node.js serverless functions.
   output: 'static',
-  adapter: vercel(),
+  adapter: vercel({
+    isr: {
+      bypassToken: import.meta.env.ISR_SECRET,
+    },
+  }),
   integrations: [react()],
 
   vite: {
