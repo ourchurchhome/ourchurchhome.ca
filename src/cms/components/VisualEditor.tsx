@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { EditorState } from 'prosemirror-state';
 import type { Transaction } from 'prosemirror-state';
 import { schema, defaultMarkdownParser, defaultMarkdownSerializer } from 'prosemirror-markdown';
@@ -7,6 +7,8 @@ import { history, undo, redo } from 'prosemirror-history';
 import { baseKeymap, toggleMark, setBlockType, wrapIn } from 'prosemirror-commands';
 import { wrapInList } from 'prosemirror-schema-list';
 import { ProseMirror, ProseMirrorDoc, reactKeys, useEditorEventCallback } from '@handlewithcare/react-prosemirror';
+import { ImageLibrary } from './ImageLibrary';
+import type { ImageEntry } from './ImageLibrary';
 
 // ── Toolbar ──────────────────────────────────────────────────────────────────
 function Btn({ label, title, onClick }: { label: string; title: string; onClick: () => void }) {
@@ -22,7 +24,7 @@ function Btn({ label, title, onClick }: { label: string; title: string; onClick:
   );
 }
 
-function EditorToolbar() {
+function EditorToolbar({ onInsertImageClick }: { onInsertImageClick: () => void }) {
   const cmd = (fn: Parameters<typeof useEditorEventCallback>[0]) => useEditorEventCallback(fn); // eslint-disable-line react-hooks/rules-of-hooks
 
   const bold       = cmd((v) => { toggleMark(schema.marks.strong)(v.state, v.dispatch, v); v.focus(); });
@@ -60,6 +62,8 @@ function EditorToolbar() {
       <Btn label="• List" title="Bullet list" onClick={ul} />
       <Btn label="1. List" title="Ordered list" onClick={ol} />
       <Btn label="—" title="Horizontal rule" onClick={hr} />
+      {sep}
+      <Btn label="🖼" title="Insert image" onClick={onInsertImageClick} />
     </div>
   );
 }
@@ -86,10 +90,17 @@ export interface VisualEditorProps {
 export function VisualEditor({ initialValue = '', name = 'body', onChange }: VisualEditorProps) {
   const [state, setState] = useState(() => createState(initialValue));
   const [markdown, setMarkdown] = useState(initialValue);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+
+  // Keep a live ref to the current editor state so the image callback can
+  // build a transaction against the latest doc.
+  const stateRef = useRef<EditorState>(state);
+  const dispatchRef = useRef<((tr: Transaction) => void) | null>(null);
 
   const dispatch = useCallback((tr: Transaction) => {
     setState((s) => {
       const next = s.apply(tr);
+      stateRef.current = next;
       if (tr.docChanged) {
         const md = defaultMarkdownSerializer.serialize(next.doc);
         setMarkdown(md);
@@ -99,16 +110,34 @@ export function VisualEditor({ initialValue = '', name = 'body', onChange }: Vis
     });
   }, [onChange]);
 
+  // Store the latest dispatch in a ref so the image handler (created once)
+  // always calls the current version.
+  dispatchRef.current = dispatch;
+
+  const handleImageSelect = useCallback((entry: ImageEntry) => {
+    const s = stateRef.current;
+    if (!s.schema.nodes.image) return;
+    const node = s.schema.nodes.image.create({ src: entry.url, alt: entry.filename, title: '' });
+    const tr = s.tr.replaceSelectionWith(node);
+    dispatchRef.current?.(tr);
+    setShowImagePicker(false);
+  }, []);
+
   return (
-    <div className="flex flex-col min-h-full bg-gray-950">
-      <ProseMirror state={state} dispatchTransaction={dispatch}>
-        <EditorToolbar />
-        <div className="prose prose-sm text-[white!important] max-w-none p-6 flex-1 focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-full">
-          <ProseMirrorDoc />
-        </div>
-      </ProseMirror>
-      <input type="hidden" name={name} value={markdown} />
-    </div>
+    <>
+      <div className="flex flex-col min-h-full bg-gray-950">
+        <ProseMirror state={state} dispatchTransaction={dispatch}>
+          <EditorToolbar onInsertImageClick={() => setShowImagePicker(true)} />
+          <div className="prose prose-sm text-[white!important] max-w-none p-6 flex-1 focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-full">
+            <ProseMirrorDoc />
+          </div>
+        </ProseMirror>
+        <input type="hidden" name={name} value={markdown} />
+      </div>
+      {showImagePicker && (
+        <ImageLibrary onSelect={handleImageSelect} onClose={() => setShowImagePicker(false)} />
+      )}
+    </>
   );
 }
 

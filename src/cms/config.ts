@@ -19,6 +19,7 @@ export type BuiltInControl =
   | 'UrlInput'
   | 'EmailInput'
   | 'ImageUrl'
+  | 'Image'
   | 'Group'
   | 'Repeater'
   | 'Widgets'
@@ -149,6 +150,7 @@ export type FieldType =
   | 'date'     // z.date() / z.coerce.date() → DatePicker
   | 'url'      // z.string().url() → UrlInput
   | 'email'    // z.string().email() → EmailInput
+  | 'image'    // z.string().url() with image-keyed name → Image picker
   | 'enum'     // z.enum([...]) → Select
   | 'array'    // z.array(...) → TagInput (for string arrays)
   | 'object'   // z.object({...}) → nested FieldsPane

@@ -18,6 +18,26 @@ import { LocalPersistence } from './local-persistence';
 // Shared types
 // ---------------------------------------------------------------------------
 
+/** Valid image file extensions recognised by the image library. */
+export const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'avif'] as const;
+export type ImageExtension = (typeof IMAGE_EXTENSIONS)[number];
+
+/** A single image file entry returned by listImages. */
+export interface ImageEntry {
+  /** e.g. "image_a1b2c3d4e5f6.jpg" */
+  filename: string;
+  /** Repo-relative path, e.g. "public/images/image_a1b2c3d4e5f6.jpg" */
+  path: string;
+  /** Version identifier (blob SHA or content hash). */
+  sha: string;
+  /** Absolute URL ready for use in <img src>. */
+  url: string;
+  /** File extension without dot, e.g. "jpg". */
+  ext: string;
+  /** File size in bytes (0 if unavailable). */
+  sizeBytes: number;
+}
+
 /** A single content file read from the persistence backend. */
 export interface PersistenceItem {
   /** Decoded file content (UTF-8 string). */
@@ -87,6 +107,21 @@ export interface IPersistenceService {
    * @param dir  Repo-relative directory path, e.g. "src/content/articles"
    */
   listItems(dir: string): Promise<PersistenceEntry[]>;
+
+  /** List all recognised image files in the configured IMAGE_DIR. */
+  listImages(): Promise<ImageEntry[]>;
+
+  /**
+   * Upload a new image. `data` is raw binary content.
+   * The implementation computes a content-addressed filename (image_{sha12}.{ext})
+   * and returns the stored ImageEntry. Re-uploading the same file is a no-op.
+   */
+  uploadImage(originalFilename: string, data: ArrayBuffer, message: string): Promise<ImageEntry>;
+
+  /**
+   * Delete an image by its repo-relative path and current version SHA.
+   */
+  deleteImage(path: string, sha: string, message: string): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------

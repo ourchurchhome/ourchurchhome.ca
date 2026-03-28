@@ -1,5 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import type { ResolvedField, FieldComponentProps } from '../config';
+import { ImageLibrary } from './ImageLibrary';
+import type { ImageEntry } from './ImageLibrary';
 
 const inputCls =
   'w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500';
@@ -284,6 +286,65 @@ function WidgetsControl({ field, value, onChange, name }: {
   );
 }
 
+// ── ImageControl ─────────────────────────────────────────────────────────────
+function ImageControl({ name, value, onChange, required }: {
+  name: string; value: unknown; onChange: (v: unknown) => void; required?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const url = typeof value === 'string' ? value : '';
+
+  const handleSelect = useCallback((entry: ImageEntry) => {
+    onChange(entry.url);
+    setOpen(false);
+  }, [onChange]);
+
+  return (
+    <>
+      <input type="hidden" name={name} value={url} />
+      <div className="flex flex-col gap-2">
+        {url ? (
+          <div className="relative w-full aspect-video max-h-48 rounded-md overflow-hidden bg-gray-800 border border-gray-700">
+            <img src={url} alt="Selected image" className="w-full h-full object-contain" />
+          </div>
+        ) : (
+          <div className="w-full aspect-video max-h-48 rounded-md bg-gray-800 border border-gray-700 flex items-center justify-center">
+            <span className="text-gray-600 text-sm">No image selected</span>
+          </div>
+        )}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="px-3 py-1.5 text-xs bg-gray-700 hover:bg-gray-600 text-gray-200 rounded-md transition-colors"
+          >
+            {url ? 'Change image…' : 'Select image…'}
+          </button>
+          {url && (
+            <button
+              type="button"
+              onClick={() => onChange('')}
+              className="px-3 py-1.5 text-xs text-red-400 hover:text-red-300 transition-colors"
+            >
+              Remove
+            </button>
+          )}
+        </div>
+        {/* Manual URL fallback */}
+        <input
+          type="url"
+          name={`${name}__manual`}
+          className={inputCls}
+          placeholder="Or paste an image URL…"
+          value={url}
+          required={required}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+      {open && <ImageLibrary onSelect={handleSelect} onClose={() => setOpen(false)} />}
+    </>
+  );
+}
+
 // ── FieldControl ────────────────────────────────────────────────────────────
 function FieldControl({ field, value, onChange, namePrefix }: {
   field: ResolvedField; value: unknown; onChange: (v: unknown) => void; namePrefix: string;
@@ -331,6 +392,8 @@ function FieldControl({ field, value, onChange, namePrefix }: {
       return <TableControl field={field} value={value} onChange={onChange} name={name} />;
     case 'Widgets':
       return <WidgetsControl field={field} value={value} onChange={onChange} name={name} />;
+    case 'Image':
+      return <ImageControl name={name} value={value} onChange={onChange} required={field.required} />;
     default: // TextInput, ImageUrl, unknown
       return <input id={name} type="text" name={name} className={inputCls} value={str} required={field.required} onChange={(e) => onChange(e.target.value)} />;
   }

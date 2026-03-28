@@ -108,6 +108,21 @@ export default function CmsSidebar({ collections, user, currentPath }: Props) {
             </ul>
           </section>
         )}
+        <section>
+          <p className="px-5 mb-1 text-xs font-medium uppercase tracking-widest text-gray-500">Media</p>
+          <ul>
+            <li>
+              <a
+                href="/cms/images"
+                onClick={() => setMobileOpen(false)}
+                className={`flex items-center gap-2.5 px-5 py-2 text-sm transition-colors ${isActive(currentPath, '/cms/images') ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-800 hover:text-white'}`}
+              >
+                <span className="text-base leading-none">🖼️</span>
+                Images
+              </a>
+            </li>
+          </ul>
+        </section>
       </nav>
 
       {/* User footer */}

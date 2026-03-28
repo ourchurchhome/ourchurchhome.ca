@@ -14,9 +14,10 @@
 
 import { readFile, writeFile, unlink, readdir, stat } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
-import { join, resolve } from 'node:path';
-import { existsSync } from 'node:fs';
-import type { IPersistenceService, PersistenceItem, PersistenceEntry } from './persistence';
+import { join, resolve, extname } from 'node:path';
+import { existsSync, mkdirSync } from 'node:fs';
+import type { IPersistenceService, PersistenceItem, PersistenceEntry, ImageEntry } from './persistence';
+import { IMAGE_EXTENSIONS } from './persistence';
 
 /** Absolute path to the repository root (where the Astro project lives). */
 const REPO_ROOT = resolve('.');
@@ -81,6 +82,77 @@ export class LocalPersistence implements IPersistenceService {
     }
 
     return entries;
+  }
+
+  /** List all recognised image files in the configured IMAGE_DIR. */
+  async listImages(): Promise<ImageEntry[]> {
+    const imageDir = import.meta.env.IMAGE_DIR ?? 'public/images';
+    const abs = absPath(imageDir);
+    if (!existsSync(abs)) return [];
+
+    const names = await readdir(abs);
+    const images: ImageEntry[] = [];
+
+    for (const name of names) {
+      const rawExt = extname(name).slice(1).toLowerCase();
+      const ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
+      if (!IMAGE_EXTENSIONS.includes(ext as any)) continue;
+
+      const entryAbs = join(abs, name);
+      const entryPath = `${imageDir}/${name}`;
+      const info = await stat(entryAbs);
+      const data = await readFile(entryAbs);
+      const sha = createHash('sha256').update(data).digest('hex');
+
+      // Derive a browser-accessible URL from the imageDir.
+      // If the imageDir starts with "public/", strip that prefix.
+      const urlPath = imageDir.startsWith('public/')
+        ? '/' + entryPath.slice('public/'.length)
+        : '/' + entryPath;
+
+      images.push({
+        filename: name,
+        path: entryPath,
+        sha,
+        url: urlPath,
+        ext,
+        sizeBytes: info.size,
+      });
+    }
+
+    return images;
+  }
+
+  /** Upload a new image using content-addressed naming (image_{sha12}.{ext}). */
+  async uploadImage(originalFilename: string, data: ArrayBuffer, _message: string): Promise<ImageEntry> {
+    const imageDir = import.meta.env.IMAGE_DIR ?? 'public/images';
+    const rawExt = extname(originalFilename).slice(1).toLowerCase();
+    const ext = rawExt === 'jpeg' ? 'jpg' : rawExt;
+    const hash = createHash('sha256').update(Buffer.from(data)).digest('hex').slice(0, 12);
+    const filename = `image_${hash}.${ext}`;
+    const filePath = `${imageDir}/${filename}`;
+    const abs = absPath(filePath);
+
+    // Ensure the directory exists
+    mkdirSync(absPath(imageDir), { recursive: true });
+
+    // Write only if not already present (deduplication)
+    if (!existsSync(abs)) {
+      await writeFile(abs, Buffer.from(data));
+    }
+
+    const info = await stat(abs);
+    const sha = createHash('sha256').update(Buffer.from(data)).digest('hex');
+    const urlPath = imageDir.startsWith('public/')
+      ? '/' + filePath.slice('public/'.length)
+      : '/' + filePath;
+
+    return { filename, path: filePath, sha, url: urlPath, ext, sizeBytes: info.size };
+  }
+
+  /** Delete an image from the local working tree. */
+  async deleteImage(path: string, _sha: string, _message: string): Promise<void> {
+    await unlink(absPath(path));
   }
 }
 

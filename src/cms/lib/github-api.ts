@@ -89,6 +89,36 @@ export async function putFile(
   return { sha: data.content.sha };
 }
 
+/**
+ * Create or update a binary file (image, etc.) and commit the change.
+ * `data` is raw binary content — it is base64-encoded before being sent to GitHub.
+ * Pass `sha` when updating an existing file.
+ */
+export async function putBinaryFile(
+  token: string,
+  filePath: string,
+  data: ArrayBuffer,
+  message: string,
+  sha?: string,
+): Promise<{ sha: string }> {
+  const { owner, repo, branch } = cfg();
+  const body: Record<string, unknown> = {
+    message,
+    content: Buffer.from(data).toString('base64'),
+    branch,
+  };
+  if (sha) body.sha = sha;
+
+  const res = await ghFetch(token, `/repos/${owner}/${repo}/contents/${filePath}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(`GitHub putBinaryFile ${res.status}: ${await res.text()}`);
+  const result = (await res.json()) as { content: { sha: string } };
+  return { sha: result.content.sha };
+}
+
 /** Delete a file from the repository and commit the deletion. */
 export async function deleteFile(
   token: string,

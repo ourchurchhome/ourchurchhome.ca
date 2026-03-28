@@ -37,6 +37,7 @@ function isOptional(z: ZodTypeAny): boolean {
 // ---------------------------------------------------------------------------
 
 const MULTILINE_KEYS = /body|description|content|notes|bio|summary/i;
+const IMAGE_KEYS = /(^|[_-])(image|photo|thumbnail|avatar|logo|banner|cover|picture|headshot|icon)s?$/i;
 
 function inferType(z: ZodTypeAny, key?: string): FieldType {
   const inner = unwrap(z);
@@ -45,7 +46,9 @@ function inferType(z: ZodTypeAny, key?: string): FieldType {
   switch (t) {
     case 'string': {
       const checks = (inner._def as { checks?: Array<{ format?: string }> }).checks ?? [];
-      if (checks.some((c) => c.format === 'url')) return 'url';
+      const isUrl = checks.some((c) => c.format === 'url');
+      if (isUrl && key && IMAGE_KEYS.test(key)) return 'image';
+      if (isUrl) return 'url';
       if (checks.some((c) => c.format === 'email')) return 'email';
       if (key && MULTILINE_KEYS.test(key)) return 'text';
       return 'string';
@@ -66,6 +69,7 @@ function defaultControl(type: FieldType): BuiltInControl {
     text: 'TextArea',
     url: 'UrlInput',
     email: 'EmailInput',
+    image: 'Image',
     number: 'NumberInput',
     boolean: 'Toggle',
     date: 'DatePicker',

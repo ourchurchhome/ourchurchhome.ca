@@ -1,0 +1,11 @@
+---
+export const prerender = false;
+
+import CmsShell from '../../../cms/layouts/CmsShell.astro';
+import { ImageLibraryPage } from '../../../cms/components/ImageLibraryPage';
+---
+
+<CmsShell>
+  <ImageLibraryPage client:load />
+</CmsShell>
+
