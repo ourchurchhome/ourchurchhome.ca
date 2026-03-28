@@ -2,8 +2,7 @@
 export const prerender = false;
 
 import CmsShell from '../../../cms/layouts/CmsShell.astro';
-import { FieldsPane } from '../../../cms/components/FieldsPane';
-import { VisualEditor } from '../../../cms/components/VisualEditor';
+import { EditorLayout } from '../../../cms/components/EditorLayout';
 import cmsConfig from '../../../../cms.config';
 import { resolveCollections } from '../../../cms/lib/resolve-config';
 import { getFile, putFile } from '../../../cms/lib/github-api';
@@ -79,47 +78,51 @@ try {
 ---
 
 <CmsShell>
-  <div class="p-8 max-w-3xl mx-auto">
-    <div class="flex items-center gap-3 mb-6">
-      <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors">← {collection.label}</a>
-      <span class="text-gray-600">/</span>
-      <h1 class="text-xl font-semibold text-white font-mono">{slug}</h1>
+  {loadError && (
+    <div class="h-full flex flex-col">
+      <div class="shrink-0 flex items-center gap-3 px-6 py-3 border-b border-gray-800">
+        <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors">← {collection.label}</a>
+        <span class="text-gray-600">/</span>
+        <h1 class="text-xl font-semibold text-white font-mono">{slug}</h1>
+      </div>
+      <div class="p-6">
+        <div class="p-3 bg-red-900/50 border border-red-700 rounded text-red-300 text-sm">{loadError}</div>
+      </div>
     </div>
+  )}
 
-    {loadError && <div class="mb-6 p-3 bg-red-900/50 border border-red-700 rounded text-red-300 text-sm">{loadError}</div>}
-    {saveError && <div class="mb-6 p-3 bg-red-900/50 border border-red-700 rounded text-red-300 text-sm">{saveError}</div>}
-    {saveSuccess && <div class="mb-6 p-3 bg-green-900/50 border border-green-700 rounded text-green-300 text-sm">Saved successfully.</div>}
+  {parsed && (
+    <form method="POST" class="h-full flex flex-col">
+      <input type="hidden" name="__sha" value={parsed.sha} />
 
-    {parsed && (
-      <form method="POST">
-        <input type="hidden" name="__sha" value={parsed.sha} />
-
-        {collection.fields.length > 0 && (
-          <section class="mb-8 bg-gray-800 rounded-lg p-5 border border-gray-700">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Fields</h2>
-            <FieldsPane
-              client:load
-              fields={collection.fields}
-              initialValues={parsed.frontmatter}
-            />
-          </section>
-        )}
-
-        {collection.fileExtension === 'md' && (
-          <section class="mb-8">
-            <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Content</h2>
-            <VisualEditor client:load initialValue={parsed.body} name="body" />
-          </section>
-        )}
-
-        <div class="flex justify-end gap-3">
-          <a href={`/cms/${collectionName}`} class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
-          <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-md transition-colors">
+      <!-- Header bar: breadcrumb + status + actions -->
+      <div class="shrink-0 flex items-center justify-between gap-4 px-5 h-[60px] border-b border-gray-800">
+        <div class="flex items-center gap-3 min-w-0">
+          <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors shrink-0">← {collection.label}</a>
+          <span class="text-gray-600 shrink-0">/</span>
+          <h1 class="text-sm font-semibold text-white font-mono truncate">{slug}</h1>
+        </div>
+        <div class="flex items-center gap-3 shrink-0">
+          {saveError && <span class="text-red-400 text-xs">{saveError}</span>}
+          {saveSuccess && <span class="text-green-400 text-xs">Saved</span>}
+          <a href={`/cms/${collectionName}`} class="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
+          <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-md transition-colors">
             Save changes
           </button>
         </div>
-      </form>
-    )}
-  </div>
+      </div>
+
+      <!-- Split-pane editor -->
+      <div class="flex-1 overflow-hidden min-h-0">
+        <EditorLayout
+          client:load
+          hasBody={collection.fileExtension === 'md'}
+          fields={collection.fields}
+          initialValues={parsed.frontmatter}
+          initialBody={parsed.body}
+        />
+      </div>
+    </form>
+  )}
 </CmsShell>
 

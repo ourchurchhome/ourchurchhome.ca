@@ -31,14 +31,35 @@ export default defineConfig({
       allowDelete: false,
       icon: '⛪',
       fields: {
-        description: { control: 'TextArea' },
-        image: { control: 'ImageUrl', label: 'Hero Image URL' },
+        description: { component: 'TextArea' },
+        image: { component: 'ImageUrl', label: 'Hero Image URL' },
       },
     },
     schedules: {
       allowCreate: false,
       allowDelete: false,
       icon: '📅',
+      fields: {
+        entries: {
+          component: 'Table',
+          columns: {
+            date: { component: 'DatePicker', label: 'Date' },
+            name: { component: 'TextInput', label: 'Name' },
+          },
+        },
+      },
+    },
+    'kitchen-sink': {
+      /** Only visible in development mode — never shown in production. */
+      development: true,
+      singleton: true,
+      allowCreate: false,
+      allowDelete: false,
+      icon: '🧪',
+      fields: {
+        // Override sections → Repeater (it would auto-select Table as all fields are scalar)
+        sections: { component: 'Repeater', label: 'Sections (Repeater demo)' },
+      },
     },
   },
 });

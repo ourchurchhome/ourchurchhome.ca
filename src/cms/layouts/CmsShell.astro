@@ -28,14 +28,14 @@ const currentPath = Astro.url.pathname;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang="en" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>CMS — OurChurchHome</title>
     <meta name="robots" content="noindex, nofollow" />
   </head>
-  <body class="min-h-screen bg-gray-950 text-gray-100">
+  <body class="h-full bg-gray-950 text-gray-100">
     <CmsSidebar
       client:load
       collections={sidebarCollections}
@@ -47,11 +47,13 @@ const currentPath = Astro.url.pathname;
       currentPath={currentPath}
     />
 
-    <main class="min-h-screen lg:pl-64">
-      <div class="lg:hidden flex items-center px-4 py-3 border-b border-gray-800">
+    <main class="h-full flex flex-col lg:pl-64">
+      <div class="lg:hidden flex items-center px-4 py-3 border-b border-gray-800 shrink-0">
         <CmsNavToggle client:load />
       </div>
-      <slot />
+      <div class="flex-1 overflow-hidden">
+        <slot />
+      </div>
     </main>
   </body>
 </html>

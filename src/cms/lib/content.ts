@@ -49,6 +49,7 @@ export const COLLECTION_PATHS: Record<string, string> = {
   articles: 'src/content/articles',
   schedules: 'src/content/schedules',
   banner: 'src/content',
+  'kitchen-sink': 'src/content',
 };
 
 /** File extension used by each collection. */
@@ -57,11 +58,16 @@ export const COLLECTION_EXTENSIONS: Record<string, 'md' | 'json'> = {
   articles: 'md',
   schedules: 'json',
   banner: 'md',
+  'kitchen-sink': 'md',
 };
 
-/** Human-readable label for a collection slug. */
+/** Human-readable label for a collection slug. Handles kebab-case and camelCase. */
 export function collectionLabel(name: string): string {
-  return name.charAt(0).toUpperCase() + name.slice(1);
+  return name
+    .replace(/([A-Z])/g, ' $1')
+    .replace(/[_-]/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase())
+    .trim();
 }
 
 /**

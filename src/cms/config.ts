@@ -18,7 +18,11 @@ export type BuiltInControl =
   | 'TagInput'
   | 'UrlInput'
   | 'EmailInput'
-  | 'ImageUrl';
+  | 'ImageUrl'
+  | 'Group'
+  | 'Repeater'
+  | 'Widgets'
+  | 'Table';
 
 // ---------------------------------------------------------------------------
 // Custom field component contract
@@ -62,6 +66,12 @@ export interface FieldOverride {
    * Useful for fields managed programmatically (e.g. `draft`, `updatedAt`).
    */
   hidden?: boolean;
+  /**
+   * Per-column presentation overrides for Table (and Repeater) fields.
+   * Keys match the property names of the inner object in the Zod array schema.
+   * Only `component` and `label` are meaningful here; `hidden` hides the column.
+   */
+  columns?: Record<string, FieldOverride>;
 }
 
 // ---------------------------------------------------------------------------
@@ -85,6 +95,12 @@ export interface CollectionConfig {
    * Defaults to 📄 for singletons and 📂 for group collections.
    */
   icon?: string;
+  /**
+   * When true, this collection is only visible in the CMS when running in
+   * development mode (import.meta.env.DEV). Useful for test/kitchen-sink
+   * collections that should never appear in production.
+   */
+  development?: boolean;
   /**
    * Presentation overrides for specific fields, keyed by field name.
    * These are merged on top of the auto-generated field config derived
@@ -153,8 +169,23 @@ export interface ResolvedField {
    * override specifies a different BuiltInControl or custom component.
    */
   control: BuiltInControl | ComponentType<FieldComponentProps>;
-  /** For object fields: recursively resolved child fields */
+  /** For object fields (Group): recursively resolved child fields */
   children?: ResolvedField[];
+  /**
+   * For array-of-object fields (Repeater, Table, Widgets): the resolved fields
+   * that describe each item in the array.
+   */
+  elementChildren?: ResolvedField[];
+  /**
+   * For Widgets: the discriminant key (e.g. "type") used to distinguish variants.
+   */
+  discriminantKey?: string;
+  /**
+   * For Widgets: one entry per union variant, keyed by the discriminant value.
+   * Each entry holds the child fields specific to that variant (excluding the
+   * discriminant field itself).
+   */
+  widgetVariants?: Array<{ discriminantValue: string; children: ResolvedField[] }>;
 }
 
 /**

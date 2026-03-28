@@ -140,7 +140,7 @@ export default function CmsSidebar({ collections, user, currentPath }: Props) {
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full'}
       `}>
         {/* Header */}
-        <div className="px-5 py-4 border-b border-gray-800 flex items-center justify-between">
+        <div className="px-5 h-[60px] border-b border-gray-800 flex items-center justify-between">
           <span className="text-lg font-semibold tracking-tight">CMS</span>
           <button
             className="lg:hidden p-1 -mr-1 text-gray-400 hover:text-white transition-colors"

@@ -3,10 +3,17 @@ import type { ResolvedField, FieldComponentProps } from '../config';
 
 const inputCls =
   'w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500';
+const btnGhost =
+  'text-gray-500 hover:text-white disabled:opacity-30 text-xs px-1 py-0.5 rounded transition-colors';
 
 // ── TagInput ────────────────────────────────────────────────────────────────
 function TagInput({ name, tags, onChange }: { name: string; tags: string[]; onChange: (t: string[]) => void }) {
   const [input, setInput] = useState('');
+  const commit = (raw: string) => {
+    const t = raw.trim().replace(/,$/, '').trim();
+    if (t && !tags.includes(t)) onChange([...tags, t]);
+    setInput('');
+  };
   return (
     <div>
       <input type="hidden" name={name} value={JSON.stringify(tags)} />
@@ -14,23 +21,21 @@ function TagInput({ name, tags, onChange }: { name: string; tags: string[]; onCh
         {tags.map((tag, i) => (
           <span key={i} className="flex items-center gap-1 px-2 py-0.5 bg-blue-900/60 text-blue-300 rounded text-xs">
             {tag}
-            <button type="button" onClick={() => onChange(tags.filter((_, j) => j !== i))} className="hover:text-white leading-none">×</button>
+            <button type="button" onClick={() => onChange(tags.filter((_, j) => j !== i))} className="hover:text-white leading-none" aria-label={`Remove ${tag}`}>×</button>
           </span>
         ))}
       </div>
       <input
         type="text"
         className={inputCls}
-        placeholder="Type and press Enter to add…"
+        placeholder="Type and press Enter or , to add…"
         value={input}
-        onChange={(e) => setInput(e.target.value)}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v.endsWith(',')) { commit(v); } else { setInput(v); }
+        }}
         onKeyDown={(e) => {
-          if (e.key === 'Enter') {
-            e.preventDefault();
-            const t = input.trim();
-            if (t && !tags.includes(t)) onChange([...tags, t]);
-            setInput('');
-          }
+          if (e.key === 'Enter') { e.preventDefault(); commit(input); }
         }}
       />
     </div>
@@ -56,6 +61,178 @@ function Toggle({ name, value, onChange }: { name: string; value: boolean; onCha
   );
 }
 
+// ── Group ────────────────────────────────────────────────────────────────────
+function GroupControl({ field, value, onChange, namePrefix }: {
+  field: ResolvedField; value: unknown; onChange: (v: unknown) => void; namePrefix: string;
+}) {
+  const [open, setOpen] = useState(true);
+  const obj = (typeof value === 'object' && value !== null ? value : {}) as Record<string, unknown>;
+  return (
+    <div className="border border-gray-700 rounded-md overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="w-full flex items-center justify-between px-3 py-2 bg-gray-800 text-sm text-gray-300 hover:bg-gray-750 transition-colors"
+        aria-expanded={open}
+      >
+        <span className="font-medium">{field.label}</span>
+        <span className="text-gray-500 text-xs">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="p-3 border-t border-gray-700">
+          <FieldsPane
+            fields={field.children ?? []}
+            initialValues={obj}
+            namePrefix={namePrefix}
+            onChange={onChange}
+          />
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Repeater ─────────────────────────────────────────────────────────────────
+function RepeaterControl({ field, value, onChange, name }: {
+  field: ResolvedField; value: unknown; onChange: (v: unknown) => void; name: string;
+}) {
+  const init = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
+  const [items, setItems] = useState<Record<string, unknown>[]>(init);
+  const update = (next: Record<string, unknown>[]) => { setItems(next); onChange(next); };
+  return (
+    <div className="space-y-3">
+      <input type="hidden" name={name} value={JSON.stringify(items)} />
+      {items.map((item, i) => (
+        <div key={i} className="border border-gray-700 rounded-md overflow-hidden">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
+            <span className="text-xs text-gray-500 font-mono">Item {i + 1}</span>
+            <div className="flex gap-0.5">
+              <button type="button" disabled={i === 0} onClick={() => { const n=[...items];[n[i-1],n[i]]=[n[i],n[i-1]];update(n); }} className={btnGhost} aria-label="Move up">↑</button>
+              <button type="button" disabled={i === items.length-1} onClick={() => { const n=[...items];[n[i],n[i+1]]=[n[i+1],n[i]];update(n); }} className={btnGhost} aria-label="Move down">↓</button>
+              <button type="button" onClick={() => update(items.filter((_,j)=>j!==i))} className={`${btnGhost} text-red-500 hover:text-red-300`} aria-label="Remove item">✕</button>
+            </div>
+          </div>
+          <div className="p-3">
+            <FieldsPane
+              fields={field.elementChildren ?? []}
+              initialValues={item}
+              namePrefix={`${name}[${i}]`}
+              onChange={(v) => { const n=[...items]; n[i]=v as Record<string,unknown>; update(n); }}
+            />
+          </div>
+        </div>
+      ))}
+      <button type="button" onClick={() => update([...items, {}])}
+        className="w-full py-2 border border-dashed border-gray-600 rounded-md text-sm text-gray-400 hover:text-white hover:border-gray-400 transition-colors">
+        + Add item
+      </button>
+    </div>
+  );
+}
+
+// ── Table ─────────────────────────────────────────────────────────────────────
+function TableControl({ field, value, onChange, name }: {
+  field: ResolvedField; value: unknown; onChange: (v: unknown) => void; name: string;
+}) {
+  const cols = field.elementChildren ?? [];
+  const init = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
+  const [rows, setRows] = useState<Record<string, unknown>[]>(init);
+  const update = (next: Record<string, unknown>[]) => { setRows(next); onChange(next); };
+  const setCell = (r: number, k: string, v: unknown) => {
+    const next = rows.map((row, i) => i === r ? { ...row, [k]: v } : row);
+    update(next);
+  };
+  return (
+    <div className="overflow-x-auto">
+      <input type="hidden" name={name} value={JSON.stringify(rows)} />
+      <table className="w-full text-sm border border-gray-700 rounded-md overflow-hidden">
+        <thead>
+          <tr className="bg-gray-800 border-b border-gray-700">
+            {cols.map((c) => (
+              <th key={c.key} className="px-2 py-1.5 text-left text-xs font-medium text-gray-400">{c.label}</th>
+            ))}
+            <th className="w-8" />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, r) => (
+            <tr key={r} className="border-b border-gray-700/50 last:border-0">
+              {cols.map((c) => (
+                <td key={c.key} className="px-1 py-1">
+                  <FieldControl field={c} value={row[c.key]} onChange={(v) => setCell(r, c.key, v)} namePrefix={`${name}[${r}]`} />
+                </td>
+              ))}
+              <td className="px-1 py-1 text-center">
+                <button type="button" onClick={() => update(rows.filter((_,i)=>i!==r))} className={`${btnGhost} text-red-500 hover:text-red-300`} aria-label="Remove row">✕</button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <button type="button" onClick={() => update([...rows, {}])}
+        className="mt-2 w-full py-1.5 border border-dashed border-gray-600 rounded-md text-sm text-gray-400 hover:text-white hover:border-gray-400 transition-colors">
+        + Add row
+      </button>
+    </div>
+  );
+}
+
+// ── Widgets ───────────────────────────────────────────────────────────────────
+function WidgetsControl({ field, value, onChange, name }: {
+  field: ResolvedField; value: unknown; onChange: (v: unknown) => void; name: string;
+}) {
+  const variants = field.widgetVariants ?? [];
+  const discriminantKey = field.discriminantKey ?? 'type';
+  const init = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
+  const [items, setItems] = useState<Record<string, unknown>[]>(init);
+  const update = (next: Record<string, unknown>[]) => { setItems(next); onChange(next); };
+  const addVariant = (dv: string) => update([...items, { [discriminantKey]: dv }]);
+  return (
+    <div className="space-y-3">
+      <input type="hidden" name={name} value={JSON.stringify(items)} />
+      {items.map((item, i) => {
+        const dv = String(item[discriminantKey] ?? '');
+        const variant = variants.find((v) => v.discriminantValue === dv);
+        return (
+          <div key={i} className="border border-gray-700 rounded-md overflow-hidden">
+            <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
+              <span className="text-xs text-gray-400 font-mono">{dv || 'widget'} <span className="text-gray-600">#{i + 1}</span></span>
+              <div className="flex gap-0.5">
+                <button type="button" disabled={i===0} onClick={() => { const n=[...items];[n[i-1],n[i]]=[n[i],n[i-1]];update(n); }} className={btnGhost} aria-label="Move up">↑</button>
+                <button type="button" disabled={i===items.length-1} onClick={() => { const n=[...items];[n[i],n[i+1]]=[n[i+1],n[i]];update(n); }} className={btnGhost} aria-label="Move down">↓</button>
+                <button type="button" onClick={() => update(items.filter((_,j)=>j!==i))} className={`${btnGhost} text-red-500 hover:text-red-300`} aria-label="Remove widget">✕</button>
+              </div>
+            </div>
+            {variant && (
+              <div className="p-3">
+                <FieldsPane
+                  fields={variant.children}
+                  initialValues={item}
+                  namePrefix={`${name}[${i}]`}
+                  onChange={(v) => { const n=[...items]; n[i]={...v as Record<string,unknown>,[discriminantKey]:dv}; update(n); }}
+                />
+              </div>
+            )}
+          </div>
+        );
+      })}
+      {variants.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          {variants.map((v) => (
+            <button key={v.discriminantValue} type="button" onClick={() => addVariant(v.discriminantValue)}
+              className="py-1.5 px-3 border border-dashed border-gray-600 rounded-md text-sm text-gray-400 hover:text-white hover:border-gray-400 transition-colors">
+              + {v.discriminantValue}
+            </button>
+          ))}
+        </div>
+      )}
+      {variants.length === 0 && (
+        <p className="text-xs text-yellow-600">No widget variants configured. Add <code>widgetVariants</code> to this field in cms.config.ts.</p>
+      )}
+    </div>
+  );
+}
+
 // ── FieldControl ────────────────────────────────────────────────────────────
 function FieldControl({ field, value, onChange, namePrefix }: {
   field: ResolvedField; value: unknown; onChange: (v: unknown) => void; namePrefix: string;
@@ -72,7 +249,7 @@ function FieldControl({ field, value, onChange, namePrefix }: {
   switch (field.control) {
     case 'TextArea': {
       const textVal = typeof value === 'string' ? value : (value != null ? JSON.stringify(value, null, 2) : '');
-      return <textarea id={name} name={name} className={`${inputCls} min-h-[6rem] resize-y font-mono`} value={textVal} required={field.required} rows={6} onChange={(e) => onChange(e.target.value)} />;
+      return <textarea id={name} name={name} className={`${inputCls} min-h-[6rem] resize-y`} value={textVal} required={field.required} rows={4} onChange={(e) => onChange(e.target.value)} />;
     }
     case 'NumberInput':
       return <input id={name} type="number" name={name} className={inputCls} value={num} required={field.required} onChange={(e) => onChange(e.target.valueAsNumber)} />;
@@ -95,6 +272,14 @@ function FieldControl({ field, value, onChange, namePrefix }: {
       return <input id={name} type="url" name={name} className={inputCls} value={str} required={field.required} onChange={(e) => onChange(e.target.value)} />;
     case 'EmailInput':
       return <input id={name} type="email" name={name} className={inputCls} value={str} required={field.required} onChange={(e) => onChange(e.target.value)} />;
+    case 'Group':
+      return <GroupControl field={field} value={value} onChange={onChange} namePrefix={name} />;
+    case 'Repeater':
+      return <RepeaterControl field={field} value={value} onChange={onChange} name={name} />;
+    case 'Table':
+      return <TableControl field={field} value={value} onChange={onChange} name={name} />;
+    case 'Widgets':
+      return <WidgetsControl field={field} value={value} onChange={onChange} name={name} />;
     default: // TextInput, ImageUrl, unknown
       return <input id={name} type="text" name={name} className={inputCls} value={str} required={field.required} onChange={(e) => onChange(e.target.value)} />;
   }
@@ -105,38 +290,40 @@ export interface FieldsPaneProps {
   fields: ResolvedField[];
   initialValues: Record<string, unknown>;
   namePrefix?: string;
+  /** Called whenever any field value changes, with the full updated values map. */
+  onChange?: (values: Record<string, unknown>) => void;
 }
 
-export function FieldsPane({ fields, initialValues, namePrefix = '' }: FieldsPaneProps) {
+export function FieldsPane({ fields, initialValues, namePrefix = '', onChange }: FieldsPaneProps) {
   const [values, setValues] = useState<Record<string, unknown>>(initialValues);
-  const set = (key: string, v: unknown) => setValues((prev) => ({ ...prev, [key]: v }));
+  const set = (key: string, v: unknown) => setValues((prev) => {
+    const next = { ...prev, [key]: v };
+    onChange?.(next);
+    return next;
+  });
 
   return (
     <div className="space-y-5">
-      {fields.map((field) => (
-        <div key={field.key}>
-          <label htmlFor={namePrefix ? `${namePrefix}.${field.key}` : field.key} className="block text-sm font-medium text-gray-300 mb-1">
-            {field.label}
-            {field.required && <span className="text-red-400 ml-0.5">*</span>}
-          </label>
-          {field.type === 'object' && field.children ? (
-            <div className="pl-3 border-l border-gray-700">
-              <FieldsPane
-                fields={field.children}
-                initialValues={(typeof values[field.key] === 'object' && values[field.key] !== null ? values[field.key] : {}) as Record<string, unknown>}
-                namePrefix={namePrefix ? `${namePrefix}.${field.key}` : field.key}
-              />
-            </div>
-          ) : (
+      {fields.map((field) => {
+        const isStructural = field.control === 'Group' || field.control === 'Repeater' || field.control === 'Table' || field.control === 'Widgets';
+        return (
+          <div key={field.key}>
+            {/* Structural controls (Group/Repeater/Table/Widgets) render their own label inside */}
+            {!isStructural && (
+              <label htmlFor={namePrefix ? `${namePrefix}.${field.key}` : field.key} className="block text-sm font-medium text-gray-300 mb-1">
+                {field.label}
+                {field.required && <span className="text-red-400 ml-0.5">*</span>}
+              </label>
+            )}
             <FieldControl
               field={field}
               value={values[field.key]}
               onChange={(v) => set(field.key, v)}
               namePrefix={namePrefix}
             />
-          )}
-        </div>
-      ))}
+          </div>
+        );
+      })}
     </div>
   );
 }

@@ -36,7 +36,9 @@ function isOptional(z: ZodTypeAny): boolean {
 // Zod v4 type → FieldType inference
 // ---------------------------------------------------------------------------
 
-function inferType(z: ZodTypeAny): FieldType {
+const MULTILINE_KEYS = /body|description|content|notes|bio|summary/i;
+
+function inferType(z: ZodTypeAny, key?: string): FieldType {
   const inner = unwrap(z);
   const t = defType(inner);
 
@@ -45,6 +47,7 @@ function inferType(z: ZodTypeAny): FieldType {
       const checks = (inner._def as { checks?: Array<{ format?: string }> }).checks ?? [];
       if (checks.some((c) => c.format === 'url')) return 'url';
       if (checks.some((c) => c.format === 'email')) return 'email';
+      if (key && MULTILINE_KEYS.test(key)) return 'text';
       return 'string';
     }
     case 'number': return 'number';
@@ -68,10 +71,18 @@ function defaultControl(type: FieldType): BuiltInControl {
     date: 'DatePicker',
     enum: 'Select',
     array: 'TagInput',
-    object: 'TextInput', // overridden by recursive rendering
+    object: 'Group',
     unknown: 'TextInput',
   };
   return map[type];
+}
+
+/** True when every property of a Zod object shape is a scalar (non-object, non-array). */
+function isAllScalar(shape: Record<string, ZodTypeAny>): boolean {
+  return Object.values(shape).every((v) => {
+    const t = inferType(v);
+    return t !== 'object' && t !== 'array';
+  });
 }
 
 function toTitleCase(key: string): string {
@@ -89,20 +100,21 @@ function toTitleCase(key: string): string {
 function resolveOne(
   key: string,
   zodType: ZodTypeAny,
-  override?: FieldOverride
+  override?: FieldOverride,
+  childOverrides: Record<string, FieldOverride> = {}
 ): ResolvedField | null {
   if (override?.hidden) return null;
 
-  const type = inferType(zodType);
+  const type = inferType(zodType, key);
   const label = override?.label ?? toTitleCase(key);
   const control = override?.component ?? defaultControl(type);
   const required = !isOptional(zodType);
 
   const field: ResolvedField = { key, label, type, required, control };
 
+  // ── enum options ──────────────────────────────────────────────────────────
   if (type === 'enum') {
     const inner = unwrap(zodType);
-    // Zod v4: _def.entries is a plain object { value: value, … }, not an array
     const entries = (inner._def as { entries?: string[] | Record<string, string> }).entries;
     if (Array.isArray(entries)) {
       field.options = entries;
@@ -113,21 +125,39 @@ function resolveOne(
     }
   }
 
-  // Arrays whose element type is an object → use a JSON TextArea instead of TagInput
-  if (type === 'array' && !override?.component) {
+  // ── array fields ──────────────────────────────────────────────────────────
+  if (type === 'array') {
     const inner = unwrap(zodType);
     const element = (inner._def as { element?: ZodTypeAny }).element;
-    if (element && inferType(element) === 'object') {
-      field.control = 'TextArea';
+
+    if (element) {
+      const elementType = inferType(element);
+
+      if (elementType === 'object') {
+        // Always resolve child fields so Table/Repeater have their column definitions,
+        // even when the control was explicitly overridden in cms.config.ts.
+        const shape = (unwrap(element)._def as { shape?: Record<string, ZodTypeAny> }).shape ?? {};
+        const columnOverrides = override?.columns ?? {};
+        const elementChildren = Object.entries(shape)
+          .map(([k, v]) => resolveOne(k, v, columnOverrides[k]))
+          .filter((f): f is ResolvedField => f !== null);
+
+        field.elementChildren = elementChildren;
+
+        // Only auto-assign Table vs Repeater when the user hasn't set an explicit override.
+        if (!override?.component) {
+          field.control = isAllScalar(shape) ? 'Table' : 'Repeater';
+        }
+      }
     }
   }
 
+  // ── object / Group ────────────────────────────────────────────────────────
   if (type === 'object') {
     const inner = unwrap(zodType);
-    // Zod v4: _def.shape is a plain object (not a function)
     const shape = (inner._def as { shape: Record<string, ZodTypeAny> }).shape;
     field.children = Object.entries(shape)
-      .map(([k, v]) => resolveOne(k, v, undefined))
+      .map(([k, v]) => resolveOne(k, v, childOverrides[k]))
       .filter((f): f is ResolvedField => f !== null);
   }
 

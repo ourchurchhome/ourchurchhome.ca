@@ -12,9 +12,14 @@ import { collectionSchemas, type CollectionName } from '../../content/schemas';
 
 export function resolveCollections(config: CmsConfig): ResolvedCollection[] {
   const known = Object.keys(collectionSchemas) as CollectionName[];
+  const isDev = import.meta.env.DEV;
 
-  return known.map((name) => {
+  return known.flatMap((name) => {
     const cc = config.collections[name] ?? {};
+
+    // Hide development-only collections when not in dev mode.
+    if (cc.development && !isDev) return [];
+
     const fields = getFieldsForCollection(name, cc.fields ?? {});
 
     const singleton = cc.singleton ?? false;
@@ -31,4 +36,5 @@ export function resolveCollections(config: CmsConfig): ResolvedCollection[] {
     };
   });
 }
+
 

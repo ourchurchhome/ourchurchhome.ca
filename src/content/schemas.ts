@@ -50,6 +50,54 @@ export const schedulesSchema = z.object({
 });
 
 /**
+ * Kitchen-sink schema — development-only collection that exercises every
+ * available CMS field type and control. Registered in cms.config.ts with
+ * `development: true` so it is hidden in production.
+ */
+export const kitchenSinkSchema = z.object({
+  // ── Scalar field types ───────────────────────────────────────────────────
+  /** TextInput — plain string */
+  title: z.string(),
+  /** TextInput — optional string */
+  subtitle: z.string().optional(),
+  /** TextArea — multiline hint key ("description") */
+  description: z.string().optional(),
+  /** NumberInput */
+  order: z.number().optional(),
+  /** Toggle */
+  active: z.boolean().default(false),
+  /** DatePicker */
+  publishedAt: z.coerce.date().optional(),
+  /** UrlInput — z.string().url() */
+  website: z.string().url().optional(),
+  /** EmailInput — z.string().email() */
+  contactEmail: z.string().email().optional(),
+  /** Select — z.enum([...]) */
+  status: z.enum(['draft', 'review', 'published']).default('draft'),
+  /** TagInput — array of strings */
+  tags: z.array(z.string()).optional(),
+  // ── Complex field types ──────────────────────────────────────────────────
+  /** Group — nested object; auto-selects Group control */
+  author: z.object({
+    name: z.string(),
+    /** TextArea — multiline hint key ("bio") */
+    bio: z.string().optional(),
+  }).optional(),
+  /** Table — array of all-scalar objects; auto-selects Table control */
+  tableDemo: z.array(z.object({
+    label: z.string(),
+    value: z.string(),
+  })).optional(),
+  /** Repeater — array of objects; overridden to Repeater in cms.config.ts */
+  sections: z.array(z.object({
+    heading: z.string(),
+    /** TextArea — multiline hint key ("content") */
+    content: z.string().optional(),
+    featured: z.boolean().optional(),
+  })).optional(),
+});
+
+/**
  * Registry mapping each collection name to its Zod schema.
  * The CMS uses this to look up the right schema by collection slug.
  * Keep this in sync with the `collections` export in src/content.config.ts.
@@ -59,6 +107,7 @@ export const collectionSchemas = {
   articles: articlesSchema,
   banner: bannerSchema,
   schedules: schedulesSchema,
+  'kitchen-sink': kitchenSinkSchema,
 } as const;
 
 export type CollectionName = keyof typeof collectionSchemas;

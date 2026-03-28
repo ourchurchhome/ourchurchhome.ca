@@ -1,0 +1,22 @@
+- [ ] Allow keyboard shortcuts in editor
+- [ ] When running in dev, we should allow making the CMS write to the filesystem instead of via Github
+- [ ] The visual editor should have keyboard shortcuts for formatting (bold, italic, etc.)
+- [] The visual editor should have a way to upload images (to github in the `public/images` folder, and then insert the URL into the editor and provide a realtime preview)
+- [x] UI fields:
+  - Text
+  - Textara
+  - Number
+  - Date
+  - URL
+  - Email
+  - Toggle
+  - Tags
+  - Group (grouping of fields as an object)
+  - Repeater (grouping of fields as an array of objects)
+  - Widgets (grouping of non-homogeneous fields as an array of objects)
+  - Table (array of objects)
+    - Each item in the table is a simpler field like text, textarea, number, etc.
+- [ ] The CMS collection config should have a way to optionally define a preview URL for a content item (e.g. an article would preview the article page) with interpolating the item's slug into the URL
+- [ ] A vercel integration to let the CMS display the deployment status of the latest commit for the selected branch
+- [x] The content editor UI should be a left and right pane with fields on the left and if it's markdown, the visual editor on the right. On mobile, you should toggle between the two. It should fill the width available and height available. Each pane should scroll independently.
+- [ ] The Github integration should have an error page when you don't have access to the repo

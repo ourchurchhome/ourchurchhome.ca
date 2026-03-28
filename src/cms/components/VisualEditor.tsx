@@ -44,7 +44,7 @@ function EditorToolbar() {
 
   const sep = <div className="w-px h-4 bg-gray-700 mx-1 self-center" />;
   return (
-    <div className="flex items-center flex-wrap gap-0.5 px-2 py-1.5 border-b border-gray-700 bg-gray-900">
+    <div className="flex items-center flex-wrap gap-0.5 px-2 py-1.5 border-b border-gray-700 bg-gray-900 sticky top-0 z-10">
       <Btn label="B" title="Bold (Ctrl+B)" onClick={bold} />
       <Btn label="I" title="Italic (Ctrl+I)" onClick={italic} />
       <Btn label="`" title="Inline code" onClick={code} />
@@ -95,10 +95,10 @@ export function VisualEditor({ initialValue = '', name = 'body' }: VisualEditorP
   }, []);
 
   return (
-    <div className="border border-gray-700 rounded-lg overflow-hidden bg-gray-950 focus-within:border-blue-500 transition-colors">
+    <div className="flex flex-col min-h-full bg-gray-950">
       <ProseMirror state={state} dispatchTransaction={dispatch}>
         <EditorToolbar />
-        <div className="prose bg-white prose-sm max-w-none p-4 min-h-64 focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-56">
+        <div className="prose prose-sm text-[white!important] max-w-none p-6 flex-1 focus:outline-none [&_.ProseMirror]:outline-none [&_.ProseMirror]:min-h-full">
           <ProseMirrorDoc />
         </div>
       </ProseMirror>
