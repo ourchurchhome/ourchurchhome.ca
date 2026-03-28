@@ -5,6 +5,7 @@ import {
   articlesSchema,
   bannerSchema,
   schedulesSchema,
+  homepageSchema,
 } from './content/schemas';
 
 // Schemas live in src/content/schemas.ts so they can be imported by both
@@ -31,5 +32,10 @@ const schedules = defineCollection({
   schema: schedulesSchema,
 });
 
-export const collections = { churches, articles, schedules, banner };
+const homepage = defineCollection({
+  loader: glob({ pattern: 'homepage.json', base: './src/content' }),
+  schema: homepageSchema,
+});
+
+export const collections = { churches, articles, schedules, banner, homepage };
 

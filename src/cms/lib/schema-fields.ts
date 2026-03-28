@@ -36,7 +36,7 @@ function isOptional(z: ZodTypeAny): boolean {
 // Zod v4 type → FieldType inference
 // ---------------------------------------------------------------------------
 
-const MULTILINE_KEYS = /body|description|content|notes|bio|summary/i;
+const MULTILINE_KEYS = /body|description|content|notes|bio|summary|quote|subtitle/i;
 const IMAGE_KEYS = /(^|[_-])(image|photo|thumbnail|avatar|logo|banner|cover|picture|headshot|icon)s?$/i;
 
 function inferType(z: ZodTypeAny, key?: string): FieldType {

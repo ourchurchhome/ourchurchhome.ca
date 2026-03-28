@@ -1,0 +1,56 @@
+---
+interface Button {
+  primary: boolean;
+  copy: string;
+  url: string;
+}
+
+interface Props {
+  title: string;
+  subtitle?: string;
+  image?: string;
+  buttons?: Button[];
+}
+
+const { title, subtitle, image, buttons } = Astro.props;
+---
+
+<section class="relative flex items-center overflow-hidden" style="min-height: 560px;">
+  {image && (
+    <img
+      src={image}
+      alt=""
+      aria-hidden="true"
+      class="absolute inset-0 w-full h-full object-cover object-center"
+    />
+  )}
+  <div class="absolute inset-0 hero-gradient opacity-85"></div>
+  <div class="relative z-10 max-w-7xl mx-auto px-6 w-full py-24">
+    <div class="max-w-2xl">
+      <h1 class="font-headline text-5xl md:text-6xl text-on-primary font-bold mb-6 leading-tight tracking-tight">
+        {title}
+      </h1>
+      {subtitle && (
+        <p class="text-on-primary/85 text-lg md:text-xl mb-10 font-light leading-relaxed">
+          {subtitle}
+        </p>
+      )}
+      {buttons && buttons.length > 0 && (
+        <div class="flex flex-wrap gap-4">
+          {buttons.map((btn) => (
+            btn.primary ? (
+              <a href={btn.url} class="bg-secondary text-on-primary px-8 py-3 rounded-xl font-semibold text-base shadow-lg hover:-translate-y-0.5 transition-all duration-200 active:scale-95">
+                {btn.copy}
+              </a>
+            ) : (
+              <a href={btn.url} class="bg-white/10 border border-white/25 text-on-primary px-8 py-3 rounded-xl font-semibold text-base hover:bg-white/20 transition-all duration-200">
+                {btn.copy}
+              </a>
+            )
+          ))}
+        </div>
+      )}
+    </div>
+  </div>
+</section>
+

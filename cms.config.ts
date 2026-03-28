@@ -12,6 +12,15 @@ import { defineConfig } from './src/cms/config';
 
 export default defineConfig({
   collections: {
+    homepage: {
+      singleton: true,
+      allowCreate: false,
+      allowDelete: false,
+      icon: '🏠',
+      fields: {
+        widgets: { component: 'Widgets', label: 'Page Sections' },
+      },
+    },
     banner: {
       singleton: true,
       allowCreate: false,

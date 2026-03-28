@@ -49,6 +49,7 @@ export const COLLECTION_PATHS: Record<string, string> = {
   articles: 'src/content/articles',
   schedules: 'src/content/schedules',
   banner: 'src/content',
+  homepage: 'src/content',
   'kitchen-sink': 'src/content',
 };
 
@@ -58,6 +59,7 @@ export const COLLECTION_EXTENSIONS: Record<string, 'md' | 'json'> = {
   articles: 'md',
   schedules: 'json',
   banner: 'md',
+  homepage: 'json',
   'kitchen-sink': 'md',
 };
 

@@ -1,0 +1,52 @@
+---
+import { getCollection } from 'astro:content';
+
+interface Props {
+  title: string;
+  subtitle?: string;
+}
+
+const { title, subtitle } = Astro.props;
+
+const articles = await getCollection('articles', ({ data }) => !data.draft);
+const recentArticles = articles
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+---
+
+{recentArticles.length > 0 && (
+  <section class="py-20" aria-labelledby="news-heading">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex items-baseline justify-between mb-10">
+        <div>
+          {subtitle && (
+            <span class="text-secondary font-label font-bold tracking-[0.3em] uppercase block mb-2 text-sm">{subtitle}</span>
+          )}
+          <h2 id="news-heading" class="font-headline text-3xl font-bold text-primary">{title}</h2>
+        </div>
+        <a href="/articles" class="text-sm font-semibold text-secondary hover:underline">View all →</a>
+      </div>
+      <ul class="grid gap-6 sm:grid-cols-3">
+        {recentArticles.map((article) => (
+          <li>
+            <a href={`/articles/${article.id}`} class="group block h-full bg-surface-container-lowest border border-outline-variant rounded-xl p-6 hover:border-secondary hover:shadow-sm transition-all duration-200">
+              <span class="inline-block text-xs font-label font-semibold uppercase tracking-wider text-on-secondary bg-secondary px-2 py-0.5 rounded mb-3 capitalize">
+                {article.data.category}
+              </span>
+              <h3 class="font-headline font-bold text-primary group-hover:text-secondary mb-2 transition-colors leading-snug">
+                {article.data.title}
+              </h3>
+              <p class="text-xs text-outline mb-3">
+                {article.data.date.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
+              </p>
+              {article.data.description && (
+                <p class="text-sm text-on-surface-variant leading-relaxed">{article.data.description}</p>
+              )}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+)}
+

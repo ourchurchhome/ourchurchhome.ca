@@ -1,0 +1,59 @@
+---
+interface Props {
+  title: string;
+  body?: string;
+  quote?: string;
+  communityCount?: number;
+  yearsOfGrace?: string;
+  ctaTitle?: string;
+  ctaDescription?: string;
+}
+
+const { title, body, quote, communityCount, yearsOfGrace, ctaTitle, ctaDescription } = Astro.props;
+---
+
+<section class="py-20 bg-surface-container-low">
+  <div class="max-w-7xl mx-auto px-6">
+    <div class="grid md:grid-cols-2 gap-14 items-center">
+      <div>
+        <h2 class="font-headline text-primary text-4xl font-bold mb-6">{title}</h2>
+        {body && (
+          <p class="text-on-surface-variant text-lg leading-relaxed mb-5">{body}</p>
+        )}
+        {quote && (
+          <p class="text-on-surface-variant text-lg leading-relaxed italic border-l-4 border-secondary pl-5 mb-8">
+            &ldquo;{quote}&rdquo;
+          </p>
+        )}
+        <div class="flex gap-12">
+          {communityCount != null && (
+            <div>
+              <p class="font-headline text-3xl font-bold text-secondary">{communityCount}</p>
+              <p class="text-sm font-label uppercase tracking-widest text-outline mt-0.5">Communities</p>
+            </div>
+          )}
+          {yearsOfGrace && (
+            <div>
+              <p class="font-headline text-3xl font-bold text-secondary">{yearsOfGrace}</p>
+              <p class="text-sm font-label uppercase tracking-widest text-outline mt-0.5">Years of Grace</p>
+            </div>
+          )}
+        </div>
+      </div>
+      {(ctaTitle || ctaDescription) && (
+        <div class="bg-surface-container rounded-xl p-8 border border-outline-variant">
+          <div class="flex items-center gap-3 mb-6">
+            <span class="material-symbols-outlined text-tertiary text-3xl select-none" aria-hidden="true">volunteer_activism</span>
+            {ctaTitle && (
+              <h3 class="font-headline text-xl font-bold text-primary">{ctaTitle}</h3>
+            )}
+          </div>
+          {ctaDescription && (
+            <p class="text-on-surface-variant leading-relaxed">{ctaDescription}</p>
+          )}
+        </div>
+      )}
+    </div>
+  </div>
+</section>
+

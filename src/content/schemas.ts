@@ -116,6 +116,56 @@ export const kitchenSinkSchema = z.object({
 });
 
 /**
+ * Homepage singleton schema — controls the editable content for each section
+ * of the homepage. Each widget represents one page section.
+ *
+ * Widget types:
+ *   hero     — full-width hero with title, subtitle, image, and CTA buttons
+ *   news     — "News & Updates" section header (articles are pulled automatically)
+ *   vision   — "Our Shared Vision" section with body, quote, stats, and CTA card
+ *   churches — "Churches" section header (church cards are pulled automatically)
+ */
+export const homepageSchema = z.object({
+  widgets: z.array(z.discriminatedUnion('type', [
+    // ── Hero ─────────────────────────────────────────────────────────────────
+    z.object({
+      type: z.literal('hero'),
+      title: z.string(),
+      subtitle: z.string().optional(),
+      image: z.string().url().optional(),
+      buttons: z.array(z.object({
+        primary: z.boolean().default(false),
+        copy: z.string(),
+        url: z.string(),
+      })).optional(),
+    }),
+    // ── News & Updates ───────────────────────────────────────────────────────
+    z.object({
+      type: z.literal('news'),
+      title: z.string(),
+      subtitle: z.string().optional(),
+    }),
+    // ── Our Shared Vision ────────────────────────────────────────────────────
+    z.object({
+      type: z.literal('vision'),
+      title: z.string(),
+      body: z.string().optional(),
+      quote: z.string().optional(),
+      communityCount: z.number().optional(),
+      yearsOfGrace: z.string().optional(),
+      ctaTitle: z.string().optional(),
+      ctaDescription: z.string().optional(),
+    }),
+    // ── Churches ─────────────────────────────────────────────────────────────
+    z.object({
+      type: z.literal('churches'),
+      title: z.string(),
+      subtitle: z.string().optional(),
+    }),
+  ])).optional(),
+});
+
+/**
  * Registry mapping each collection name to its Zod schema.
  * The CMS uses this to look up the right schema by collection slug.
  * Keep this in sync with the `collections` export in src/content.config.ts.
@@ -125,6 +175,7 @@ export const collectionSchemas = {
   articles: articlesSchema,
   banner: bannerSchema,
   schedules: schedulesSchema,
+  homepage: homepageSchema,
   'kitchen-sink': kitchenSinkSchema,
 } as const;
 
