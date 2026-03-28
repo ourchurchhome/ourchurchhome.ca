@@ -19,7 +19,7 @@ export const GET: APIRoute = async ({ locals }) => {
   }
 
   try {
-    const svc = createPersistenceService(session.accessToken);
+    const svc = createPersistenceService(session.token);
     const images = await svc.listImages();
     return new Response(JSON.stringify(images), {
       status: 200,
@@ -54,7 +54,7 @@ export const POST: APIRoute = async ({ request, locals }) => {
     }
 
     const data = await file.arrayBuffer();
-    const svc = createPersistenceService(session.accessToken);
+    const svc = createPersistenceService(session.token);
     const entry = await svc.uploadImage(file.name, data, `Upload image ${file.name}`);
 
     return new Response(JSON.stringify(entry), {
@@ -88,7 +88,7 @@ export const DELETE: APIRoute = async ({ request, locals }) => {
       });
     }
 
-    const svc = createPersistenceService(session.accessToken);
+    const svc = createPersistenceService(session.token);
     await svc.deleteImage(body.path, body.sha, `Delete image ${body.path}`);
 
     return new Response(JSON.stringify({ ok: true }), {
