@@ -2,11 +2,25 @@
   "church": "morell",
   "type": "cleaner",
   "entries": [
-    { "date": "2026-04-05", "name": "Douglas MacInnis" },
-    { "date": "2026-04-12", "name": "Carol Peters" },
-    { "date": "2026-04-19", "name": "James MacKinnon" },
-    { "date": "2026-04-26", "name": "Ruth Gallant" },
-    { "date": "2026-05-03", "name": "Edward Doiron" }
+    {
+      "date": "2026-04-05",
+      "name": "Douglas MacInnis!"
+    },
+    {
+      "date": "2026-04-12",
+      "name": "Carol Peters"
+    },
+    {
+      "date": "2026-04-19",
+      "name": "James MacKinnon"
+    },
+    {
+      "date": "2026-04-26",
+      "name": "Ruth Gallant"
+    },
+    {
+      "date": "2026-05-03",
+      "name": "Edward Doiron"
+    }
   ]
 }
-
