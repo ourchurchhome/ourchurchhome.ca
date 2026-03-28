@@ -1,0 +1,39 @@
+---
+export const prerender = false;
+
+import { GitHub, generateState } from 'arctic';
+import { getSession } from '../../cms/lib/session';
+
+// Already authenticated → go straight to the dashboard
+const session = getSession(Astro.request);
+if (session) {
+  return Astro.redirect('/cms');
+}
+
+const github = new GitHub(
+  import.meta.env.GITHUB_CLIENT_ID,
+  import.meta.env.GITHUB_CLIENT_SECRET,
+  `${Astro.url.origin}/cms/auth/callback`
+);
+
+const state = generateState();
+const authUrl = github.createAuthorizationURL(state, ['read:user', 'repo']);
+
+// Store state in a short-lived cookie for CSRF validation on callback
+const stateCookie = [
+  `cms_oauth_state=${state}`,
+  'HttpOnly',
+  'SameSite=Lax',
+  'Path=/cms/auth',
+  'Max-Age=600', // 10 minutes
+].join('; ');
+
+return new Response(null, {
+  status: 302,
+  headers: {
+    Location: authUrl.toString(),
+    'Set-Cookie': stateCookie,
+  },
+});
+---
+

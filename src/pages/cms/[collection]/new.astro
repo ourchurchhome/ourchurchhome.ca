@@ -1,0 +1,128 @@
+---
+export const prerender = false;
+
+import CmsShell from '../../../cms/layouts/CmsShell.astro';
+import { FieldsPane } from '../../../cms/components/FieldsPane';
+import { VisualEditor } from '../../../cms/components/VisualEditor';
+import cmsConfig from '../../../../cms.config';
+import { resolveCollections } from '../../../cms/lib/resolve-config';
+import { putFile } from '../../../cms/lib/github-api';
+import { serializeMarkdown, serializeJson, itemPath } from '../../../cms/lib/content';
+import type { ResolvedField } from '../../../cms/config';
+
+const { collection: collectionName } = Astro.params;
+const collections = resolveCollections(cmsConfig);
+const collection = collections.find((c) => c.name === collectionName);
+if (!collection) return new Response('Collection not found', { status: 404 });
+if (!collection.allowCreate) return new Response('Create not allowed', { status: 403 });
+
+const session = Astro.locals.session;
+if (!session) return Astro.redirect('/cms/login');
+
+// ── Coerce a formData string value to the right JS type ─────────────────────
+function coerce(raw: string | null, field: ResolvedField): unknown {
+  if (raw === null || raw === '') return undefined;
+  switch (field.type) {
+    case 'boolean': return raw === 'true';
+    case 'number':  return Number(raw);
+    case 'date':    return raw;
+    case 'array':
+    case 'object':  try { return JSON.parse(raw); } catch { return raw; }
+    default:        return raw;
+  }
+}
+
+// ── POST: create ─────────────────────────────────────────────────────────────
+let createError: string | null = null;
+
+if (Astro.request.method === 'POST') {
+  try {
+    const form = await Astro.request.formData();
+    const slug = (form.get('__slug') as string).trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (!slug) throw new Error('Slug is required');
+
+    const body = (form.get('body') as string | null) ?? '';
+
+    const frontmatter: Record<string, unknown> = {};
+    for (const field of collection.fields) {
+      const raw = form.get(field.key) as string | null;
+      const val = coerce(raw, field);
+      if (val !== undefined) frontmatter[field.key] = val;
+    }
+
+    let fileContent: string;
+    if (collection.fileExtension === 'md') {
+      fileContent = serializeMarkdown(frontmatter, body);
+    } else {
+      fileContent = serializeJson(frontmatter);
+    }
+
+    const filePath = itemPath(collectionName!, slug);
+    await putFile(session.token, filePath, fileContent, `cms: create ${collectionName}/${slug}`);
+    return Astro.redirect(`/cms/${collectionName}/${slug}`);
+  } catch (e) {
+    createError = e instanceof Error ? e.message : 'Create failed';
+  }
+}
+---
+
+<CmsShell>
+  <div class="p-8 max-w-3xl mx-auto">
+    <div class="flex items-center gap-3 mb-6">
+      <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors">← {collection.label}</a>
+      <span class="text-gray-600">/</span>
+      <h1 class="text-xl font-semibold text-white">New {collection.label.replace(/s$/, '')}</h1>
+    </div>
+
+    {createError && (
+      <div class="mb-6 p-3 bg-red-900/50 border border-red-700 rounded text-red-300 text-sm">{createError}</div>
+    )}
+
+    <form method="POST">
+      <section class="mb-8 bg-gray-800 rounded-lg p-5 border border-gray-700">
+        <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Slug</h2>
+        <div>
+          <label for="__slug" class="block text-sm font-medium text-gray-300 mb-1">
+            URL slug <span class="text-red-400">*</span>
+          </label>
+          <input
+            id="__slug"
+            type="text"
+            name="__slug"
+            required
+            pattern="[a-z0-9-]+"
+            placeholder="my-new-item"
+            class="w-full bg-gray-900 border border-gray-700 rounded-md px-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-mono"
+          />
+          <p class="mt-1 text-xs text-gray-500">Lowercase letters, numbers and hyphens only. Cannot be changed after creation.</p>
+        </div>
+      </section>
+
+      {collection.fields.length > 0 && (
+        <section class="mb-8 bg-gray-800 rounded-lg p-5 border border-gray-700">
+          <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-4">Fields</h2>
+          <FieldsPane
+            client:load
+            fields={collection.fields}
+            initialValues={{}}
+          />
+        </section>
+      )}
+
+      {collection.fileExtension === 'md' && (
+        <section class="mb-8">
+          <h2 class="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">Content</h2>
+          <VisualEditor client:load initialValue="" name="body" />
+        </section>
+      )}
+
+      <div class="flex justify-end gap-3">
+        <a href={`/cms/${collectionName}`} class="px-4 py-2 text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
+        <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-md transition-colors">
+          Create
+        </button>
+      </div>
+    </form>
+  </div>
+</CmsShell>
+

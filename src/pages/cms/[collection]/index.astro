@@ -1,0 +1,143 @@
+---
+export const prerender = false;
+
+import CmsShell from '../../../cms/layouts/CmsShell.astro';
+import cmsConfig from '../../../../cms.config';
+import { resolveCollections } from '../../../cms/lib/resolve-config';
+import { listFiles, deleteFile } from '../../../cms/lib/github-api';
+import { slugFromFilename } from '../../../cms/lib/content';
+
+const { collection: collectionName } = Astro.params;
+const collections = resolveCollections(cmsConfig);
+const collection = collections.find((c) => c.name === collectionName);
+
+if (!collection) {
+  return new Response('Collection not found', { status: 404 });
+}
+
+// Singletons don't have a list page — redirect to their editor
+if (collection.singleton) {
+  return Astro.redirect(`/cms/${collection.name}/${collection.name}`);
+}
+
+const session = Astro.locals.session;
+if (!session) return Astro.redirect('/cms/login');
+const token = session.token;
+
+// Handle DELETE action
+if (Astro.request.method === 'POST') {
+  const form = await Astro.request.formData();
+  const action = form.get('_action');
+  const slug = form.get('slug') as string;
+  const sha = form.get('sha') as string;
+
+  if (action === 'delete' && slug && sha) {
+    const filePath = `${collection.basePath}/${slug}.${collection.fileExtension}`;
+    await deleteFile(token, filePath, sha, `cms: delete ${collectionName}/${slug}`);
+    return Astro.redirect(`/cms/${collectionName}`);
+  }
+}
+
+let files: Array<{ slug: string; sha: string }> = [];
+let error: string | null = null;
+
+try {
+  const entries = await listFiles(token, collection.basePath);
+  files = entries
+    .filter(
+      (e) =>
+        e.type === 'file' &&
+        e.name.endsWith(`.${collection.fileExtension}`)
+    )
+    .map((e) => ({ slug: slugFromFilename(e.name), sha: e.sha }));
+} catch (e) {
+  error = e instanceof Error ? e.message : 'Failed to load files';
+}
+---
+
+<CmsShell>
+  <div class="p-8 max-w-4xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-semibold text-white">{collection.label}</h1>
+      {collection.allowCreate && (
+        <a
+          href={`/cms/${collection.name}/new`}
+          class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-md transition-colors"
+        >
+          + New {collection.label.replace(/s$/, '')}
+        </a>
+      )}
+    </div>
+
+    {error && (
+      <div class="mb-4 p-3 bg-red-900/50 border border-red-700 rounded text-red-300 text-sm">
+        {error}
+      </div>
+    )}
+
+    {files.length === 0 && !error && (
+      <div class="text-gray-500 py-16 text-center">
+        <p>No items yet.</p>
+        {collection.allowCreate && (
+          <a
+            href={`/cms/${collection.name}/new`}
+            class="mt-2 inline-block text-blue-400 hover:text-blue-300 text-sm"
+          >
+            Create the first one →
+          </a>
+        )}
+      </div>
+    )}
+
+    {files.length > 0 && (
+      <div class="bg-gray-800 rounded-lg overflow-hidden border border-gray-700">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="border-b border-gray-700">
+              <th class="text-left px-4 py-3 text-gray-400 font-medium">Slug</th>
+              <th class="px-4 py-3 text-right text-gray-400 font-medium">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {files.map(({ slug, sha }) => (
+              <tr class="border-b border-gray-700/50 last:border-0 hover:bg-gray-700/30">
+                <td class="px-4 py-3">
+                  <a
+                    href={`/cms/${collection.name}/${slug}`}
+                    class="text-blue-400 hover:text-blue-300 font-mono"
+                  >
+                    {slug}
+                  </a>
+                </td>
+                <td class="px-4 py-3 text-right">
+                  <div class="flex items-center justify-end gap-3">
+                    <a
+                      href={`/cms/${collection.name}/${slug}`}
+                      class="text-gray-400 hover:text-white text-xs transition-colors"
+                    >
+                      Edit
+                    </a>
+                    {collection.allowDelete && (
+                      <form method="POST" onsubmit="return confirm('Delete this item? This cannot be undone.')">
+                        <input type="hidden" name="_action" value="delete" />
+                        <input type="hidden" name="slug" value={slug} />
+                        <input type="hidden" name="sha" value={sha} />
+                        <button
+                          type="submit"
+                          class="text-red-400 hover:text-red-300 text-xs transition-colors"
+                        >
+                          Delete
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    )}
+  </div>
+</CmsShell>
+

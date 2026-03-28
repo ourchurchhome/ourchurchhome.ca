@@ -1,0 +1,24 @@
+---
+export const prerender = false;
+
+import CmsShell from '../../cms/layouts/CmsShell.astro';
+import cmsConfig from '../../../cms.config';
+import { resolveCollections } from '../../cms/lib/resolve-config';
+
+const collections = resolveCollections(cmsConfig);
+// Redirect to the first non-singleton collection, or the first singleton
+const first = collections.find((c) => !c.singleton) ?? collections[0];
+if (first) {
+  const target = first.singleton
+    ? `/cms/${first.name}/index`
+    : `/cms/${first.name}`;
+  return Astro.redirect(target);
+}
+---
+
+<CmsShell>
+  <div class="flex items-center justify-center h-full text-gray-500 py-32">
+    <p>No collections are configured yet. Edit <code>cms.config.ts</code> to get started.</p>
+  </div>
+</CmsShell>
+---

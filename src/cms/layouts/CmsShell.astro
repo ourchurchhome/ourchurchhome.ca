@@ -1,0 +1,54 @@
+---
+/**
+ * src/cms/layouts/CmsShell.astro
+ *
+ * Server-rendered layout for all CMS pages. Loads the CMS config,
+ * resolves collections, and mounts the sidebar React component.
+ * Page-specific content is injected via <slot />.
+ */
+export const prerender = false;
+
+import '../../styles/global.css';
+import cmsConfig from '../../../cms.config';
+import { resolveCollections } from '../lib/resolve-config';
+import CmsSidebar from '../components/CmsSidebar';
+
+const session = Astro.locals.session;
+if (!session) return Astro.redirect('/cms/login');
+const collections = resolveCollections(cmsConfig);
+
+const sidebarCollections = collections.map(({ name, label, singleton }) => ({
+  name,
+  label,
+  singleton,
+}));
+
+const currentPath = Astro.url.pathname;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CMS — OurChurchHome</title>
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body class="flex min-h-screen bg-gray-950 text-gray-100">
+    <CmsSidebar
+      client:load
+      collections={sidebarCollections}
+      user={{
+        name: session.name,
+        username: session.username,
+        avatarUrl: session.avatarUrl,
+      }}
+      currentPath={currentPath}
+    />
+
+    <main class="flex-1 overflow-y-auto">
+      <slot />
+    </main>
+  </body>
+</html>
+

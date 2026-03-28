@@ -1,0 +1,104 @@
+---
+export const prerender = false;
+
+import { GitHub, OAuth2RequestError } from 'arctic';
+import { setSessionCookie } from '../../../cms/lib/session';
+
+const { searchParams } = Astro.url;
+const code = searchParams.get('code');
+const state = searchParams.get('state');
+
+// Read state cookie for CSRF check
+function getCookie(name: string): string | null {
+  const header = Astro.request.headers.get('cookie') ?? '';
+  for (const chunk of header.split(';')) {
+    const eq = chunk.indexOf('=');
+    if (eq === -1) continue;
+    if (chunk.slice(0, eq).trim() === name) return chunk.slice(eq + 1).trim();
+  }
+  return null;
+}
+
+const storedState = getCookie('cms_oauth_state');
+
+if (!code || !state || !storedState || state !== storedState) {
+  return new Response('Invalid OAuth state', { status: 400 });
+}
+
+try {
+  const github = new GitHub(
+    import.meta.env.GITHUB_CLIENT_ID,
+    import.meta.env.GITHUB_CLIENT_SECRET,
+    `${Astro.url.origin}/cms/auth/callback`
+  );
+
+  const tokens = await github.validateAuthorizationCode(code);
+  const accessToken = tokens.accessToken();
+
+  // Fetch authenticated user info
+  const userRes = await fetch('https://api.github.com/user', {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+      Accept: 'application/vnd.github+json',
+      'X-GitHub-Api-Version': '2022-11-28',
+    },
+  });
+
+  if (!userRes.ok) {
+    return new Response('Failed to fetch GitHub user', { status: 502 });
+  }
+
+  const user = await userRes.json() as {
+    login: string;
+    name: string | null;
+    avatar_url: string;
+  };
+
+  // Check repository collaborator status
+  const owner = import.meta.env.GITHUB_REPO_OWNER;
+  const repo = import.meta.env.GITHUB_REPO_NAME;
+
+  const collabRes = await fetch(
+    `https://api.github.com/repos/${owner}/${repo}/collaborators/${user.login}`,
+    {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/vnd.github+json',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+    }
+  );
+
+  // 204 = is a collaborator, 404 = not
+  if (collabRes.status !== 204) {
+    return new Response(null, {
+      status: 302,
+      headers: { Location: '/cms/login?error=not_collaborator' },
+    });
+  }
+
+  const sessionCookie = setSessionCookie({
+    token: accessToken,
+    username: user.login,
+    name: user.name ?? user.login,
+    avatarUrl: user.avatar_url,
+  });
+
+  // Expire the state cookie and set the session cookie
+  return new Response(null, {
+    status: 302,
+    headers: new Headers([
+      ['Location', '/cms'],
+      ['Set-Cookie', sessionCookie],
+      ['Set-Cookie', 'cms_oauth_state=; Path=/cms/auth; Max-Age=0'],
+    ]),
+  });
+} catch (e) {
+  if (e instanceof OAuth2RequestError) {
+    return new Response('OAuth error: ' + e.message, { status: 400 });
+  }
+  console.error('OAuth callback error', e);
+  return new Response('Internal server error', { status: 500 });
+}
+---
+
