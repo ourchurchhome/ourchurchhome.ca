@@ -1,0 +1,43 @@
+---
+export const prerender = false;
+
+import '../../../styles/global.css';
+---
+
+<!doctype html>
+<html lang="en" class="h-full">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Signed out — OurChurchHome CMS</title>
+    <meta name="robots" content="noindex, nofollow" />
+  </head>
+  <body class="h-full bg-gray-950 text-gray-100 flex items-center justify-center p-6">
+    <div class="w-full max-w-sm text-center">
+
+      <!-- Icon -->
+      <div class="mx-auto mb-6 flex h-14 w-14 items-center justify-center rounded-full bg-gray-800 text-gray-400">
+        <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+          <polyline points="16 17 21 12 16 7" />
+          <line x1="21" y1="12" x2="9" y2="12" />
+        </svg>
+      </div>
+
+      <h1 class="text-xl font-semibold text-white mb-2">You've been signed out</h1>
+      <p class="text-sm text-gray-400 mb-8">
+        Your session has been cleared. You can safely close this tab,
+        or return to the home page.
+      </p>
+
+      <a
+        href="/"
+        class="inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg bg-white hover:bg-gray-100 active:bg-gray-200 text-gray-900 font-medium text-sm transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+      >
+        ← Back to home page
+      </a>
+
+    </div>
+  </body>
+</html>
+

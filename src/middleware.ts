@@ -4,7 +4,7 @@ import { getSession } from './cms/lib/session';
 // Routes under /cms that don't require a valid session.
 // These must be exact matches OR use startsWith only for the auth sub-paths.
 const PUBLIC_CMS_EXACT = new Set(['/cms']);
-const PUBLIC_CMS_PREFIXES = ['/cms/login', '/cms/auth/callback'];
+const PUBLIC_CMS_PREFIXES = ['/cms/login', '/cms/auth/callback', '/cms/logout'];
 
 export const onRequest = defineMiddleware((context, next) => {
   const { pathname } = context.url;
