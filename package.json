@@ -16,6 +16,7 @@
     "@astrojs/vercel": "^10.0.3",
     "@handlewithcare/react-prosemirror": "^3.0.0",
     "@tailwindcss/vite": "^4.2.2",
+    "@tanstack/react-form": "^1.28.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "arctic": "^3.7.0",

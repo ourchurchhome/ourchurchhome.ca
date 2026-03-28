@@ -61,6 +61,8 @@ export async function getFile(
 /**
  * Create or update a file in the repository and commit the change.
  * Pass `sha` when updating an existing file (required by the API).
+ * Returns the new blob SHA of the committed file, which must be used
+ * for any subsequent update to avoid a 409 conflict.
  */
 export async function putFile(
   token: string,
@@ -68,7 +70,7 @@ export async function putFile(
   content: string,
   message: string,
   sha?: string
-): Promise<void> {
+): Promise<{ sha: string }> {
   const { owner, repo, branch } = cfg();
   const body: Record<string, unknown> = {
     message,
@@ -83,6 +85,8 @@ export async function putFile(
     body: JSON.stringify(body),
   });
   if (!res.ok) throw new Error(`GitHub putFile ${res.status}: ${await res.text()}`);
+  const data = (await res.json()) as { content: { sha: string } };
+  return { sha: data.content.sha };
 }
 
 /** Delete a file from the repository and commit the deletion. */

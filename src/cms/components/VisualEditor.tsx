@@ -80,19 +80,24 @@ function createState(markdown: string): EditorState {
 export interface VisualEditorProps {
   initialValue?: string;
   name?: string;
+  onChange?: (markdown: string) => void;
 }
 
-export function VisualEditor({ initialValue = '', name = 'body' }: VisualEditorProps) {
+export function VisualEditor({ initialValue = '', name = 'body', onChange }: VisualEditorProps) {
   const [state, setState] = useState(() => createState(initialValue));
   const [markdown, setMarkdown] = useState(initialValue);
 
   const dispatch = useCallback((tr: Transaction) => {
     setState((s) => {
       const next = s.apply(tr);
-      if (tr.docChanged) setMarkdown(defaultMarkdownSerializer.serialize(next.doc));
+      if (tr.docChanged) {
+        const md = defaultMarkdownSerializer.serialize(next.doc);
+        setMarkdown(md);
+        onChange?.(md);
+      }
       return next;
     });
-  }, []);
+  }, [onChange]);
 
   return (
     <div className="flex flex-col min-h-full bg-gray-950">

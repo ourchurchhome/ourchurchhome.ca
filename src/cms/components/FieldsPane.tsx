@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import type { ResolvedField, FieldComponentProps } from '../config';
 
 const inputCls =
@@ -137,17 +137,44 @@ function TableControl({ field, value, onChange, name }: {
   const cols = field.elementChildren ?? [];
   const init = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
   const [rows, setRows] = useState<Record<string, unknown>[]>(init);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragIndex = useRef<number | null>(null);
+
   const update = (next: Record<string, unknown>[]) => { setRows(next); onChange(next); };
   const setCell = (r: number, k: string, v: unknown) => {
-    const next = rows.map((row, i) => i === r ? { ...row, [k]: v } : row);
-    update(next);
+    update(rows.map((row, i) => i === r ? { ...row, [k]: v } : row));
   };
+
+  const handleDragStart = (r: number) => {
+    dragIndex.current = r;
+  };
+  const handleDragOver = (e: React.DragEvent, r: number) => {
+    e.preventDefault(); // required to allow drop
+    if (dragIndex.current !== null && dragIndex.current !== r) setDragOverIndex(r);
+  };
+  const handleDrop = (r: number) => {
+    const from = dragIndex.current;
+    if (from === null || from === r) return;
+    const next = [...rows];
+    const [moved] = next.splice(from, 1);
+    next.splice(r, 0, moved);
+    update(next);
+    dragIndex.current = null;
+    setDragOverIndex(null);
+  };
+  const handleDragEnd = () => {
+    dragIndex.current = null;
+    setDragOverIndex(null);
+  };
+
   return (
     <div className="overflow-x-auto">
       <input type="hidden" name={name} value={JSON.stringify(rows)} />
       <table className="w-full text-sm border border-gray-700 rounded-md overflow-hidden">
         <thead>
           <tr className="bg-gray-800 border-b border-gray-700">
+            {/* drag handle column header */}
+            <th className="w-6" />
             {cols.map((c) => (
               <th key={c.key} className="px-2 py-1.5 text-left text-xs font-medium text-gray-400">{c.label}</th>
             ))}
@@ -156,7 +183,22 @@ function TableControl({ field, value, onChange, name }: {
         </thead>
         <tbody>
           {rows.map((row, r) => (
-            <tr key={r} className="border-b border-gray-700/50 last:border-0">
+            <tr
+              key={r}
+              draggable
+              onDragStart={() => handleDragStart(r)}
+              onDragOver={(e) => handleDragOver(e, r)}
+              onDrop={() => handleDrop(r)}
+              onDragEnd={handleDragEnd}
+              className={[
+                'border-b border-gray-700/50 last:border-0 transition-colors',
+                dragOverIndex === r ? 'bg-blue-900/30 border-blue-500/50' : '',
+              ].join(' ')}
+            >
+              {/* drag handle cell */}
+              <td className="px-1 py-1 text-center cursor-grab active:cursor-grabbing text-gray-600 hover:text-gray-400 select-none">
+                ⠿
+              </td>
               {cols.map((c) => (
                 <td key={c.key} className="px-1 py-1">
                   <FieldControl field={c} value={row[c.key]} onChange={(v) => setCell(r, c.key, v)} namePrefix={`${name}[${r}]`} />
@@ -305,11 +347,11 @@ export function FieldsPane({ fields, initialValues, namePrefix = '', onChange }:
   return (
     <div className="space-y-5">
       {fields.map((field) => {
-        const isStructural = field.control === 'Group' || field.control === 'Repeater' || field.control === 'Table' || field.control === 'Widgets';
+        // Group renders its own label inside its collapsible header; all others need one here.
+        const hasOwnLabel = field.control === 'Group';
         return (
           <div key={field.key}>
-            {/* Structural controls (Group/Repeater/Table/Widgets) render their own label inside */}
-            {!isStructural && (
+            {!hasOwnLabel && (
               <label htmlFor={namePrefix ? `${namePrefix}.${field.key}` : field.key} className="block text-sm font-medium text-gray-300 mb-1">
                 {field.label}
                 {field.required && <span className="text-red-400 ml-0.5">*</span>}

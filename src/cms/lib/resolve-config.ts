@@ -29,6 +29,9 @@ export function resolveCollections(config: CmsConfig): ResolvedCollection[] {
       singleton,
       allowCreate: cc.allowCreate ?? true,
       allowDelete: cc.allowDelete ?? true,
+      // Singletons can never be renamed (their slug is the collection name).
+      // For regular collections, default to true unless explicitly disabled.
+      allowRename: singleton ? false : (cc.allowRename ?? true),
       icon: cc.icon ?? (singleton ? '📄' : '📂'),
       fields,
       fileExtension: COLLECTION_EXTENSIONS[name] ?? 'md',

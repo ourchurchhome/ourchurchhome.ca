@@ -5,7 +5,7 @@ import CmsShell from '../../../cms/layouts/CmsShell.astro';
 import { EditorLayout } from '../../../cms/components/EditorLayout';
 import cmsConfig from '../../../../cms.config';
 import { resolveCollections } from '../../../cms/lib/resolve-config';
-import { getFile, putFile } from '../../../cms/lib/github-api';
+import { getFile, putFile, deleteFile } from '../../../cms/lib/github-api';
 import { parseMarkdown, parseJson, serializeMarkdown, serializeJson, itemPath } from '../../../cms/lib/content';
 import type { ResolvedField } from '../../../cms/config';
 
@@ -34,13 +34,19 @@ function coerce(raw: string | null, field: ResolvedField): unknown {
 
 // ── POST: save ───────────────────────────────────────────────────────────────
 let saveError: string | null = null;
-let saveSuccess = false;
+const isFetch = Astro.request.headers.get('X-CMS-Fetch') === '1';
 
 if (Astro.request.method === 'POST') {
   try {
     const form = await Astro.request.formData();
     const sha  = form.get('__sha') as string;
     const body = (form.get('body') as string | null) ?? '';
+
+    // Slug rename: client sends __newSlug; normalize it the same way new.astro does
+    const rawNewSlug = (form.get('__newSlug') as string | null)?.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    const newSlug = rawNewSlug || slug!;
+    const isRename = collection.allowRename && newSlug !== slug;
+    const newFilePath = isRename ? itemPath(collectionName!, newSlug) : filePath;
 
     const frontmatter: Record<string, unknown> = {};
     for (const field of collection.fields) {
@@ -56,9 +62,27 @@ if (Astro.request.method === 'POST') {
       fileContent = serializeJson(frontmatter);
     }
 
-    await putFile(session.token, filePath, fileContent, `cms: update ${collectionName}/${slug}`, sha);
-    saveSuccess = true;
+    // Write the file at the (possibly new) path, then delete the old one if renamed
+    const { sha: newSha } = await putFile(session.token, newFilePath, fileContent, `cms: ${isRename ? `rename ${slug} → ${newSlug}` : `update ${collectionName}/${slug}`}`, isRename ? undefined : sha);
+    if (isRename) {
+      await deleteFile(session.token, filePath, sha, `cms: remove old ${collectionName}/${slug} after rename`);
+    }
+
+    const redirectUrl = isRename ? `/cms/${collectionName}/${newSlug}` : undefined;
+
+    if (isFetch) {
+      return new Response(JSON.stringify({ sha: newSha, ...(redirectUrl ? { redirectUrl } : {}) }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    if (redirectUrl) return Astro.redirect(redirectUrl);
   } catch (e) {
+    if (isFetch) {
+      return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Save failed' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     saveError = e instanceof Error ? e.message : 'Save failed';
   }
 }
@@ -80,10 +104,10 @@ try {
 <CmsShell>
   {loadError && (
     <div class="h-full flex flex-col">
-      <div class="shrink-0 flex items-center gap-3 px-6 py-3 border-b border-gray-800">
+      <div class="shrink-0 flex items-center gap-3 px-5 h-[60px] border-b border-gray-800">
         <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors">← {collection.label}</a>
         <span class="text-gray-600">/</span>
-        <h1 class="text-xl font-semibold text-white font-mono">{slug}</h1>
+        <h1 class="text-sm font-semibold text-white font-mono">{slug}</h1>
       </div>
       <div class="p-6">
         <div class="p-3 bg-red-900/50 border border-red-700 rounded text-red-300 text-sm">{loadError}</div>
@@ -92,37 +116,20 @@ try {
   )}
 
   {parsed && (
-    <form method="POST" class="h-full flex flex-col">
-      <input type="hidden" name="__sha" value={parsed.sha} />
-
-      <!-- Header bar: breadcrumb + status + actions -->
-      <div class="shrink-0 flex items-center justify-between gap-4 px-5 h-[60px] border-b border-gray-800">
-        <div class="flex items-center gap-3 min-w-0">
-          <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors shrink-0">← {collection.label}</a>
-          <span class="text-gray-600 shrink-0">/</span>
-          <h1 class="text-sm font-semibold text-white font-mono truncate">{slug}</h1>
-        </div>
-        <div class="flex items-center gap-3 shrink-0">
-          {saveError && <span class="text-red-400 text-xs">{saveError}</span>}
-          {saveSuccess && <span class="text-green-400 text-xs">Saved</span>}
-          <a href={`/cms/${collectionName}`} class="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
-          <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-md transition-colors">
-            Save changes
-          </button>
-        </div>
-      </div>
-
-      <!-- Split-pane editor -->
-      <div class="flex-1 overflow-hidden min-h-0">
-        <EditorLayout
-          client:load
-          hasBody={collection.fileExtension === 'md'}
-          fields={collection.fields}
-          initialValues={parsed.frontmatter}
-          initialBody={parsed.body}
-        />
-      </div>
-    </form>
+    <div class="h-full">
+      <EditorLayout
+        client:load
+        hasBody={collection.fileExtension === 'md'}
+        fields={collection.fields}
+        initialValues={parsed.frontmatter}
+        initialBody={parsed.body}
+        collectionLabel={collection.label}
+        collectionHref={`/cms/${collectionName}`}
+        slug={slug!}
+        initialSha={parsed.sha}
+        allowSlugRename={collection.allowRename}
+      />
+    </div>
   )}
 </CmsShell>
 

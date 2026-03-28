@@ -32,13 +32,14 @@ function coerce(raw: string | null, field: ResolvedField): unknown {
 }
 
 // ── POST: create ─────────────────────────────────────────────────────────────
+const isFetch = Astro.request.headers.get('X-CMS-Fetch') === '1';
 let createError: string | null = null;
 
 if (Astro.request.method === 'POST') {
   try {
     const form = await Astro.request.formData();
-    const slug = (form.get('__slug') as string).trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
-    if (!slug) throw new Error('Slug is required');
+    const newSlug = (form.get('__slug') as string).trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '');
+    if (!newSlug) throw new Error('Slug is required');
 
     const body = (form.get('body') as string | null) ?? '';
 
@@ -56,52 +57,42 @@ if (Astro.request.method === 'POST') {
       fileContent = serializeJson(frontmatter);
     }
 
-    const filePath = itemPath(collectionName!, slug);
-    await putFile(session.token, filePath, fileContent, `cms: create ${collectionName}/${slug}`);
-    return Astro.redirect(`/cms/${collectionName}/${slug}`);
+    const filePath = itemPath(collectionName!, newSlug);
+    await putFile(session.token, filePath, fileContent, `cms: create ${collectionName}/${newSlug}`);
+
+    const redirectUrl = `/cms/${collectionName}/${newSlug}`;
+    if (isFetch) {
+      return new Response(JSON.stringify({ redirectUrl }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+    return Astro.redirect(redirectUrl);
   } catch (e) {
+    if (isFetch) {
+      return new Response(JSON.stringify({ error: e instanceof Error ? e.message : 'Create failed' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
     createError = e instanceof Error ? e.message : 'Create failed';
   }
 }
 ---
 
 <CmsShell>
-  <form method="POST" class="h-full flex flex-col">
-    <!-- Header bar: breadcrumb + slug input + actions -->
-    <div class="shrink-0 flex items-center justify-between gap-4 px-5 h-[60px] border-b border-gray-800">
-      <div class="flex items-center gap-3 min-w-0 flex-1">
-        <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors shrink-0">← {collection.label}</a>
-        <span class="text-gray-600 shrink-0">/</span>
-        <input
-          id="__slug"
-          type="text"
-          name="__slug"
-          required
-          pattern="[a-z0-9-]+"
-          placeholder="new-item-slug"
-          title="URL slug: lowercase letters, numbers and hyphens only"
-          class="min-w-0 flex-1 bg-gray-900 border border-gray-700 rounded-md px-2 py-1 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 font-mono"
-        />
-      </div>
-      <div class="flex items-center gap-3 shrink-0">
-        {createError && <span class="text-red-400 text-xs">{createError}</span>}
-        <a href={`/cms/${collectionName}`} class="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors">Cancel</a>
-        <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-md transition-colors">
-          Create
-        </button>
-      </div>
-    </div>
-
-    <!-- Split-pane editor -->
-    <div class="flex-1 overflow-hidden min-h-0">
-      <EditorLayout
-        client:load
-        hasBody={collection.fileExtension === 'md'}
-        fields={collection.fields}
-        initialValues={{}}
-        initialBody=""
-      />
-    </div>
-  </form>
+  <div class="h-full">
+    <EditorLayout
+      client:load
+      hasBody={collection.fileExtension === 'md'}
+      fields={collection.fields}
+      initialValues={{}}
+      initialBody=""
+      collectionLabel={collection.label}
+      collectionHref={`/cms/${collectionName}`}
+      slug="new"
+      initialSha=""
+      isNew={true}
+    />
+  </div>
 </CmsShell>
 

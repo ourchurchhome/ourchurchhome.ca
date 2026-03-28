@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
+import { useForm } from '@tanstack/react-form';
 import type { ResolvedField } from '../config';
 import { FieldsPane } from './FieldsPane';
 import { VisualEditor } from './VisualEditor';
+
+type SaveStatus = 'unchanged' | 'dirty' | 'invalid' | 'saving' | 'saved' | 'error';
 
 export interface EditorLayoutProps {
   hasBody: boolean;
@@ -9,6 +12,21 @@ export interface EditorLayoutProps {
   initialValues: Record<string, unknown>;
   initialBody?: string;
   bodyFieldName?: string;
+  /** Display label for the collection (breadcrumb) */
+  collectionLabel: string;
+  /** URL of the collection list page (breadcrumb + Cancel) */
+  collectionHref: string;
+  /** Slug of the current item — shown/editable in the breadcrumb for existing items */
+  slug: string;
+  /** Current GitHub blob SHA — required to avoid 409 conflicts on update */
+  initialSha: string;
+  /** When true, renders the slug input and POSTs a create; redirects on success */
+  isNew?: boolean;
+  /**
+   * When true (default), existing items show an editable slug input.
+   * Set to false for singletons whose slug must not be changed.
+   */
+  allowSlugRename?: boolean;
 }
 
 export function EditorLayout({
@@ -17,9 +35,137 @@ export function EditorLayout({
   initialValues,
   initialBody = '',
   bodyFieldName = 'body',
+  collectionLabel,
+  collectionHref,
+  slug,
+  initialSha,
+  isNew = false,
+  allowSlugRename = true,
 }: EditorLayoutProps) {
+  const formRef = useRef<HTMLFormElement>(null);
   const [activePane, setActivePane] = useState<'fields' | 'editor'>('fields');
+  const [currentSha, setCurrentSha] = useState(initialSha);
+  const [currentSlug, setCurrentSlug] = useState(slug);
+  const [slugError, setSlugError] = useState<string | null>(null);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('unchanged');
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // ── Slug validation ───────────────────────────────────────────────────────────
+  const SLUG_RE = /^[a-z0-9][a-z0-9-]*$/;
+  function validateSlug(val: string): string | null {
+    if (!val) return 'Slug is required';
+    if (!SLUG_RE.test(val)) return 'Only lowercase letters, numbers, and hyphens. Must start with a letter or number.';
+    return null;
+  }
+
+  // ── TanStack Form ────────────────────────────────────────────────────────────
+  const form = useForm({
+    defaultValues: {},
+    onSubmit: async () => {
+      const el = formRef.current;
+      if (!el) return;
+
+      // Validate the slug field first (real-time state may already show an error)
+      const slugFieldVal = isNew
+        ? ((el.elements.namedItem('__slug') as HTMLInputElement | null)?.value ?? '')
+        : (allowSlugRename ? currentSlug : slug);
+      const slugErr = (isNew || allowSlugRename) ? validateSlug(slugFieldVal) : null;
+      if (slugErr) {
+        setSlugError(slugErr);
+        setSaveStatus('invalid');
+        return;
+      }
+
+      // Native HTML constraint validation (required fields, patterns, etc.)
+      if (!el.checkValidity()) {
+        el.reportValidity();
+        setSaveStatus('invalid');
+        return;
+      }
+
+      setSaveStatus('saving');
+      setErrorMsg(null);
+
+      try {
+        const formData = new FormData(el);
+        // Ensure the in-memory SHA is used (not the stale server-rendered value)
+        formData.set('__sha', currentSha);
+
+        const res = await fetch(window.location.href, {
+          method: 'POST',
+          headers: { 'X-CMS-Fetch': '1' },
+          body: formData,
+        });
+
+        const json = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+
+        if (!res.ok) {
+          throw new Error((json.error as string | undefined) ?? `Save failed (${res.status})`);
+        }
+
+        // New-item creation OR slug rename: server returns a redirect URL
+        if (typeof json.redirectUrl === 'string') {
+          if (isNew) {
+            // Full navigation to the new item's editor
+            window.location.href = json.redirectUrl;
+            return;
+          }
+          // Slug rename: update the URL bar without reloading the page
+          history.replaceState(null, '', json.redirectUrl);
+          // Extract the new slug from the URL so subsequent saves POST to the right place
+          const parts = (json.redirectUrl as string).split('/');
+          setCurrentSlug(parts[parts.length - 1]);
+        }
+
+        // Capture the new SHA for subsequent saves
+        if (typeof json.sha === 'string') {
+          setCurrentSha(json.sha);
+        }
+
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus('unchanged'), 3000);
+      } catch (e) {
+        setErrorMsg(e instanceof Error ? e.message : 'Save failed');
+        setSaveStatus('error');
+      }
+    },
+  });
+
+  // ── Dirty tracking ───────────────────────────────────────────────────────────
+  const markDirty = useCallback(() => {
+    setSaveStatus((prev) => (prev === 'saving' ? prev : 'dirty'));
+  }, []);
+
+  // Typed wrappers to satisfy FieldsPane / VisualEditor callback signatures
+  const handleFieldsChange = useCallback(
+    (_values: Record<string, unknown>) => markDirty(),
+    [markDirty]
+  );
+  const handleBodyChange = useCallback((_md: string) => markDirty(), [markDirty]);
+
+  // ── Status badge ─────────────────────────────────────────────────────────────
+  const statusEl = (() => {
+    switch (saveStatus) {
+      case 'saving':
+        return <span className="text-xs text-blue-400 animate-pulse">Saving…</span>;
+      case 'saved':
+        return <span className="text-xs text-green-400">✓ Saved</span>;
+      case 'error':
+        return (
+          <span className="text-xs text-red-400" title={errorMsg ?? undefined}>
+            Save failed
+          </span>
+        );
+      case 'invalid':
+        return <span className="text-xs text-red-400">Check required fields</span>;
+      case 'dirty':
+        return <span className="text-xs text-amber-400">Unsaved changes</span>;
+      default:
+        return null;
+    }
+  })();
+
+  // ── Tab helpers (mobile) ─────────────────────────────────────────────────────
   const tabBtn = (pane: 'fields' | 'editor', label: string) => (
     <button
       type="button"
@@ -35,13 +181,96 @@ export function EditorLayout({
     </button>
   );
 
-  // Left pane: hidden on mobile when editor tab is active (and hasBody)
   const leftHidden = hasBody && activePane === 'editor';
-  // Right pane: hidden on mobile when fields tab is active
   const rightHidden = activePane === 'fields';
 
+  // ── Render ───────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full">
+    <form
+      ref={formRef}
+      method="POST"
+      onSubmit={(e) => { e.preventDefault(); form.handleSubmit(); }}
+      className="h-full flex flex-col"
+    >
+      {/* SHA hidden field — kept in sync via currentSha state */}
+      <input type="hidden" name="__sha" value={currentSha} />
+
+      {/* Header bar */}
+      <div className="shrink-0 flex items-center justify-between gap-4 px-5 h-[60px] border-b border-gray-800">
+        <div className="flex items-center gap-3 min-w-0 flex-1">
+          <a
+            href={collectionHref}
+            className="text-gray-400 hover:text-white text-sm transition-colors shrink-0"
+          >
+            ← {collectionLabel}
+          </a>
+          <span className="text-gray-600 shrink-0">/</span>
+          {isNew ? (
+            <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+              <input
+                id="__slug"
+                type="text"
+                name="__slug"
+                required
+                pattern="[a-z0-9][a-z0-9-]*"
+                placeholder="new-item-slug"
+                title="Lowercase letters, numbers, and hyphens. Must start with a letter or number."
+                onChange={(e) => setSlugError(validateSlug(e.target.value))}
+                className={[
+                  'min-w-0 w-full bg-gray-900 border rounded-md px-2 py-1 text-sm text-white placeholder-gray-500 focus:outline-none focus:ring-1 font-mono',
+                  slugError
+                    ? 'border-red-500 focus:ring-red-500'
+                    : 'border-gray-700 focus:ring-blue-500 focus:border-blue-500',
+                ].join(' ')}
+              />
+              {slugError && <span className="text-xs text-red-400 leading-tight">{slugError}</span>}
+            </div>
+          ) : allowSlugRename ? (
+            <div className="min-w-0 flex-1 flex flex-col gap-0.5">
+              <input
+                id="__newSlug"
+                type="text"
+                name="__newSlug"
+                required
+                pattern="[a-z0-9][a-z0-9-]*"
+                title="Lowercase letters, numbers, and hyphens. Must start with a letter or number."
+                value={currentSlug}
+                onChange={(e) => {
+                  setCurrentSlug(e.target.value);
+                  setSlugError(validateSlug(e.target.value));
+                  markDirty();
+                }}
+                className={[
+                  'min-w-0 w-full border rounded-md px-2 py-1 text-sm text-white focus:outline-none focus:ring-1 font-mono transition-colors',
+                  slugError
+                    ? 'bg-gray-900 border-red-500 focus:ring-red-500'
+                    : 'bg-transparent border-transparent hover:border-gray-700 focus:border-gray-600 focus:bg-gray-900 focus:ring-blue-500',
+                ].join(' ')}
+              />
+              {slugError && <span className="text-xs text-red-400 leading-tight">{slugError}</span>}
+            </div>
+          ) : (
+            <h1 className="text-sm font-semibold text-white font-mono truncate">{currentSlug}</h1>
+          )}
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {statusEl}
+          <a
+            href={collectionHref}
+            className="px-3 py-1.5 text-sm text-gray-400 hover:text-white transition-colors"
+          >
+            Cancel
+          </a>
+          <button
+            type="submit"
+            disabled={form.state.isSubmitting}
+            className="px-4 py-1.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-60 text-white text-sm font-medium rounded-md transition-colors"
+          >
+            {form.state.isSubmitting ? 'Saving…' : isNew ? 'Create' : 'Save changes'}
+          </button>
+        </div>
+      </div>
+
       {/* Mobile tab toggle — only shown when there is a body editor */}
       {hasBody && (
         <div className="lg:hidden flex shrink-0 border-b border-gray-800 bg-gray-900">
@@ -56,14 +285,12 @@ export function EditorLayout({
         <div
           className={[
             'overflow-y-auto p-6',
-            hasBody
-              ? 'lg:w-1/2 lg:border-r lg:border-gray-800'
-              : 'w-full',
+            hasBody ? 'lg:w-1/2 lg:border-r lg:border-gray-800' : 'w-full',
             leftHidden ? 'hidden lg:block' : 'flex-1 lg:flex-none',
           ].join(' ')}
         >
           {fields.length > 0 ? (
-            <FieldsPane fields={fields} initialValues={initialValues} />
+            <FieldsPane fields={fields} initialValues={initialValues} onChange={handleFieldsChange} />
           ) : (
             <p className="text-gray-500 text-sm">No fields configured.</p>
           )}
@@ -78,11 +305,11 @@ export function EditorLayout({
               'lg:flex-1',
             ].join(' ')}
           >
-            <VisualEditor initialValue={initialBody} name={bodyFieldName} />
+            <VisualEditor initialValue={initialBody} name={bodyFieldName} onChange={handleBodyChange} />
           </div>
         )}
       </div>
-    </div>
+    </form>
   );
 }
 

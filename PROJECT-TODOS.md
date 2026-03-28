@@ -1,7 +1,7 @@
-- [ ] Allow keyboard shortcuts in editor
 - [ ] When running in dev, we should allow making the CMS write to the filesystem instead of via Github
 - [ ] The visual editor should have keyboard shortcuts for formatting (bold, italic, etc.)
 - [] The visual editor should have a way to upload images (to github in the `public/images` folder, and then insert the URL into the editor and provide a realtime preview)
+- [ ] Add a UI field for embedding or uploading images (from the public folder) into the editor and render a preview (markdown image syntax)
 - [x] UI fields:
   - Text
   - Textara
@@ -20,3 +20,12 @@
 - [ ] A vercel integration to let the CMS display the deployment status of the latest commit for the selected branch
 - [x] The content editor UI should be a left and right pane with fields on the left and if it's markdown, the visual editor on the right. On mobile, you should toggle between the two. It should fill the width available and height available. Each pane should scroll independently.
 - [ ] The Github integration should have an error page when you don't have access to the repo
+- [ ] The github logout is not working, it should clear the session and redirect to the root of the website
+- [ ] Basic field validation based on the zod schema with overrides able in the cms config. It's field specific, ie.:
+  - required
+  - min/max
+  - min/max length
+  - step (number only)
+  - before/after (date)
+  - pattern (regex)
+  - custom validation (using zod)

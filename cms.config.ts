@@ -29,6 +29,7 @@ export default defineConfig({
     churches: {
       allowCreate: false,
       allowDelete: false,
+      allowRename: false,
       icon: '⛪',
       fields: {
         description: { component: 'TextArea' },
@@ -38,6 +39,7 @@ export default defineConfig({
     schedules: {
       allowCreate: false,
       allowDelete: false,
+      allowRename: false,
       icon: '📅',
       fields: {
         entries: {

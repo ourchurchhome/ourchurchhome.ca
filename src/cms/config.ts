@@ -90,6 +90,12 @@ export interface CollectionConfig {
   /** Show the "Delete" action. Default: true. */
   allowDelete?: boolean;
   /**
+   * Allow renaming the slug of an existing item.
+   * When false the slug input is locked to read-only in the editor.
+   * Automatically false for singletons. Default: true.
+   */
+  allowRename?: boolean;
+  /**
    * Icon shown in the sidebar next to the collection name.
    * Any string is accepted — emoji work well (e.g. "📝").
    * Defaults to 📄 for singletons and 📂 for group collections.
@@ -200,6 +206,7 @@ export interface ResolvedCollection {
   singleton: boolean;
   allowCreate: boolean;
   allowDelete: boolean;
+  allowRename: boolean;
   /** Icon shown in the sidebar. Defaults to 📄 (singleton) or 📂 (group). */
   icon: string;
   /** Fields derived from the Zod schema, with overrides applied */
