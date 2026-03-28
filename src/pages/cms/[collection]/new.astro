@@ -5,7 +5,7 @@ import CmsShell from '../../../cms/layouts/CmsShell.astro';
 import { EditorLayout } from '../../../cms/components/EditorLayout';
 import cmsConfig from '../../../../cms.config';
 import { resolveCollections } from '../../../cms/lib/resolve-config';
-import { putFile } from '../../../cms/lib/github-api';
+import { createPersistenceService } from '../../../cms/lib/persistence';
 import { serializeMarkdown, serializeJson, itemPath } from '../../../cms/lib/content';
 import type { ResolvedField } from '../../../cms/config';
 
@@ -30,6 +30,8 @@ function coerce(raw: string | null, field: ResolvedField): unknown {
     default:        return raw;
   }
 }
+
+const persistence = createPersistenceService(session.token);
 
 // ── POST: create ─────────────────────────────────────────────────────────────
 const isFetch = Astro.request.headers.get('X-CMS-Fetch') === '1';
@@ -58,7 +60,7 @@ if (Astro.request.method === 'POST') {
     }
 
     const filePath = itemPath(collectionName!, newSlug);
-    await putFile(session.token, filePath, fileContent, `cms: create ${collectionName}/${newSlug}`);
+    await persistence.writeItem(filePath, fileContent, `cms: create ${collectionName}/${newSlug}`);
 
     const redirectUrl = `/cms/${collectionName}/${newSlug}`;
     if (isFetch) {

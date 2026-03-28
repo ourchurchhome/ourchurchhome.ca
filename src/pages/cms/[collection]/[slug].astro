@@ -5,7 +5,7 @@ import CmsShell from '../../../cms/layouts/CmsShell.astro';
 import { EditorLayout } from '../../../cms/components/EditorLayout';
 import cmsConfig from '../../../../cms.config';
 import { resolveCollections } from '../../../cms/lib/resolve-config';
-import { getFile, putFile, deleteFile } from '../../../cms/lib/github-api';
+import { createPersistenceService } from '../../../cms/lib/persistence';
 import { parseMarkdown, parseJson, serializeMarkdown, serializeJson, itemPath } from '../../../cms/lib/content';
 import type { ResolvedField } from '../../../cms/config';
 
@@ -18,6 +18,7 @@ const session = Astro.locals.session;
 if (!session) return Astro.redirect('/cms/login');
 
 const filePath = itemPath(collectionName!, slug!);
+const persistence = createPersistenceService(session.token);
 
 // ── Coerce a formData string value to the right JS type ─────────────────────
 function coerce(raw: string | null, field: ResolvedField): unknown {
@@ -63,9 +64,9 @@ if (Astro.request.method === 'POST') {
     }
 
     // Write the file at the (possibly new) path, then delete the old one if renamed
-    const { sha: newSha } = await putFile(session.token, newFilePath, fileContent, `cms: ${isRename ? `rename ${slug} → ${newSlug}` : `update ${collectionName}/${slug}`}`, isRename ? undefined : sha);
+    const { sha: newSha } = await persistence.writeItem(newFilePath, fileContent, `cms: ${isRename ? `rename ${slug} → ${newSlug}` : `update ${collectionName}/${slug}`}`, isRename ? undefined : sha);
     if (isRename) {
-      await deleteFile(session.token, filePath, sha, `cms: remove old ${collectionName}/${slug} after rename`);
+      await persistence.deleteItem(filePath, sha, `cms: remove old ${collectionName}/${slug} after rename`);
     }
 
     const redirectUrl = isRename ? `/cms/${collectionName}/${newSlug}` : undefined;
@@ -92,7 +93,7 @@ let parsed: { frontmatter: Record<string, unknown>; body: string; sha: string } 
 let loadError: string | null = null;
 
 try {
-  const { content, sha } = await getFile(session.token, filePath);
+  const { content, sha } = await persistence.readItem(filePath);
   parsed = collection.fileExtension === 'md'
     ? parseMarkdown(content, sha)
     : parseJson(content, sha);

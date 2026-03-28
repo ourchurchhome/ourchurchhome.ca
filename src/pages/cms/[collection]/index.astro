@@ -4,7 +4,7 @@ export const prerender = false;
 import CmsShell from '../../../cms/layouts/CmsShell.astro';
 import cmsConfig from '../../../../cms.config';
 import { resolveCollections } from '../../../cms/lib/resolve-config';
-import { listFiles, deleteFile } from '../../../cms/lib/github-api';
+import { createPersistenceService } from '../../../cms/lib/persistence';
 import { slugFromFilename } from '../../../cms/lib/content';
 
 const { collection: collectionName } = Astro.params;
@@ -22,7 +22,8 @@ if (collection.singleton) {
 
 const session = Astro.locals.session;
 if (!session) return Astro.redirect('/cms/login');
-const token = session.token;
+
+const persistence = createPersistenceService(session.token);
 
 // Handle DELETE action
 if (Astro.request.method === 'POST') {
@@ -33,7 +34,7 @@ if (Astro.request.method === 'POST') {
 
   if (action === 'delete' && slug && sha) {
     const filePath = `${collection.basePath}/${slug}.${collection.fileExtension}`;
-    await deleteFile(token, filePath, sha, `cms: delete ${collectionName}/${slug}`);
+    await persistence.deleteItem(filePath, sha, `cms: delete ${collectionName}/${slug}`);
     return Astro.redirect(`/cms/${collectionName}`);
   }
 }
@@ -42,7 +43,7 @@ let files: Array<{ slug: string; sha: string }> = [];
 let error: string | null = null;
 
 try {
-  const entries = await listFiles(token, collection.basePath);
+  const entries = await persistence.listItems(collection.basePath);
   files = entries
     .filter(
       (e) =>
