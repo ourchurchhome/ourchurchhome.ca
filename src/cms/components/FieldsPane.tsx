@@ -97,13 +97,19 @@ function RepeaterControl({ field, value, onChange, name }: {
   field: ResolvedField; value: unknown; onChange: (v: unknown) => void; name: string;
 }) {
   const init = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
-  const [items, setItems] = useState<Record<string, unknown>[]>(init);
-  const update = (next: Record<string, unknown>[]) => { setItems(next); onChange(next); };
+  const nextId = useRef(init.length);
+  // Each item is wrapped in { id, data } — id is stable across reorders so
+  // React correctly moves FieldsPane instances rather than reconciling in place.
+  const [items, setItems] = useState<{ id: number; data: Record<string, unknown> }[]>(
+    () => init.map((data, i) => ({ id: i, data }))
+  );
+  const update = (next: typeof items) => { setItems(next); onChange(next.map((r) => r.data)); };
+  const addItem = () => { const id = nextId.current++; update([...items, { id, data: {} }]); };
   return (
     <div className="space-y-3">
-      <input type="hidden" name={name} value={JSON.stringify(items)} />
-      {items.map((item, i) => (
-        <div key={i} className="border border-gray-700 rounded-md overflow-hidden">
+      <input type="hidden" name={name} value={JSON.stringify(items.map((r) => r.data))} />
+      {items.map(({ id, data }, i) => (
+        <div key={id} className="border border-gray-700 rounded-md overflow-hidden">
           <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
             <span className="text-xs text-gray-500 font-mono">Item {i + 1}</span>
             <div className="flex gap-0.5">
@@ -115,14 +121,14 @@ function RepeaterControl({ field, value, onChange, name }: {
           <div className="p-3">
             <FieldsPane
               fields={field.elementChildren ?? []}
-              initialValues={item}
+              initialValues={data}
               namePrefix={`${name}[${i}]`}
-              onChange={(v) => { const n=[...items]; n[i]=v as Record<string,unknown>; update(n); }}
+              onChange={(v) => { const n=[...items]; n[i]={ id, data: v as Record<string,unknown> }; update(n); }}
             />
           </div>
         </div>
       ))}
-      <button type="button" onClick={() => update([...items, {}])}
+      <button type="button" onClick={addItem}
         className="w-full py-2 border border-dashed border-gray-600 rounded-md text-sm text-gray-400 hover:text-white hover:border-gray-400 transition-colors">
         + Add item
       </button>
@@ -226,17 +232,20 @@ function WidgetsControl({ field, value, onChange, name }: {
   const variants = field.widgetVariants ?? [];
   const discriminantKey = field.discriminantKey ?? 'type';
   const init = Array.isArray(value) ? (value as Record<string, unknown>[]) : [];
-  const [items, setItems] = useState<Record<string, unknown>[]>(init);
-  const update = (next: Record<string, unknown>[]) => { setItems(next); onChange(next); };
-  const addVariant = (dv: string) => update([...items, { [discriminantKey]: dv }]);
+  const nextId = useRef(init.length);
+  const [items, setItems] = useState<{ id: number; data: Record<string, unknown> }[]>(
+    () => init.map((data, i) => ({ id: i, data }))
+  );
+  const update = (next: typeof items) => { setItems(next); onChange(next.map((r) => r.data)); };
+  const addVariant = (dv: string) => { const id = nextId.current++; update([...items, { id, data: { [discriminantKey]: dv } }]); };
   return (
     <div className="space-y-3">
-      <input type="hidden" name={name} value={JSON.stringify(items)} />
-      {items.map((item, i) => {
-        const dv = String(item[discriminantKey] ?? '');
+      <input type="hidden" name={name} value={JSON.stringify(items.map((r) => r.data))} />
+      {items.map(({ id, data }, i) => {
+        const dv = String(data[discriminantKey] ?? '');
         const variant = variants.find((v) => v.discriminantValue === dv);
         return (
-          <div key={i} className="border border-gray-700 rounded-md overflow-hidden">
+          <div key={id} className="border border-gray-700 rounded-md overflow-hidden">
             <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
               <span className="text-xs text-gray-400 font-mono">{dv || 'widget'} <span className="text-gray-600">#{i + 1}</span></span>
               <div className="flex gap-0.5">
@@ -249,9 +258,9 @@ function WidgetsControl({ field, value, onChange, name }: {
               <div className="p-3">
                 <FieldsPane
                   fields={variant.children}
-                  initialValues={item}
+                  initialValues={data}
                   namePrefix={`${name}[${i}]`}
-                  onChange={(v) => { const n=[...items]; n[i]={...v as Record<string,unknown>,[discriminantKey]:dv}; update(n); }}
+                  onChange={(v) => { const n=[...items]; n[i]={ id, data: {...v as Record<string,unknown>,[discriminantKey]:dv} }; update(n); }}
                 />
               </div>
             )}

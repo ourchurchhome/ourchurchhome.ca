@@ -61,6 +61,8 @@ export default defineConfig({
       fields: {
         // Override sections → Repeater (it would auto-select Table as all fields are scalar)
         sections: { component: 'Repeater', label: 'Sections (Repeater demo)' },
+        // Widgets must always be explicitly declared — never auto-inferred
+        widgets: { component: 'Widgets', label: 'Widgets (Widgets demo)' },
       },
     },
   },

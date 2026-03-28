@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useForm } from '@tanstack/react-form';
 import type { ResolvedField } from '../config';
 import { FieldsPane } from './FieldsPane';
@@ -12,6 +12,7 @@ export interface EditorLayoutProps {
   initialValues: Record<string, unknown>;
   initialBody?: string;
   bodyFieldName?: string;
+  singleton: boolean;
   /** Display label for the collection (breadcrumb) */
   collectionLabel: string;
   /** URL of the collection list page (breadcrumb + Cancel) */
@@ -35,6 +36,7 @@ export function EditorLayout({
   initialValues,
   initialBody = '',
   bodyFieldName = 'body',
+  singleton,
   collectionLabel,
   collectionHref,
   slug,
@@ -143,6 +145,18 @@ export function EditorLayout({
   );
   const handleBodyChange = useCallback((_md: string) => markDirty(), [markDirty]);
 
+  // ── Unsaved-changes guard ─────────────────────────────────────────────────────
+  // Covers: breadcrumb link, Cancel button, browser back, tab close.
+  useEffect(() => {
+    const hasUnsaved = saveStatus === 'dirty' || saveStatus === 'invalid' || saveStatus === 'error';
+    if (!hasUnsaved) return;
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+    };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [saveStatus]);
+
   // ── Status badge ─────────────────────────────────────────────────────────────
   const statusEl = (() => {
     switch (saveStatus) {
@@ -198,13 +212,17 @@ export function EditorLayout({
       {/* Header bar */}
       <div className="shrink-0 flex items-center justify-between gap-4 px-5 h-[60px] border-b border-gray-800">
         <div className="flex items-center gap-3 min-w-0 flex-1">
-          <a
-            href={collectionHref}
-            className="text-gray-400 hover:text-white text-sm transition-colors shrink-0"
-          >
-            ← {collectionLabel}
-          </a>
-          <span className="text-gray-600 shrink-0">/</span>
+          {!singleton && (
+            <>
+              <a
+                href={collectionHref}
+                className="text-gray-400 hover:text-white text-sm transition-colors shrink-0"
+              >
+                ← {collectionLabel}
+              </a>
+              <span className="text-gray-600 shrink-0">/</span>
+            </>
+          )}
           {isNew ? (
             <div className="min-w-0 flex-1 flex flex-col gap-0.5">
               <input

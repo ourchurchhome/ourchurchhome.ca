@@ -95,6 +95,24 @@ export const kitchenSinkSchema = z.object({
     content: z.string().optional(),
     featured: z.boolean().optional(),
   })).optional(),
+  /**
+   * Widgets — discriminated union array; requires component: 'Widgets' override.
+   * Two variants: 'callout' (text alert box) and 'image' (image with caption).
+   */
+  widgets: z.array(z.discriminatedUnion('type', [
+    z.object({
+      type: z.literal('callout'),
+      heading: z.string(),
+      body: z.string().optional(),
+      tone: z.enum(['info', 'warning', 'success']).default('info'),
+    }),
+    z.object({
+      type: z.literal('image'),
+      url: z.string().url(),
+      caption: z.string().optional(),
+      fullWidth: z.boolean().default(false),
+    }),
+  ])).optional(),
 });
 
 /**

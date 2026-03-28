@@ -105,8 +105,12 @@ try {
   {loadError && (
     <div class="h-full flex flex-col">
       <div class="shrink-0 flex items-center gap-3 px-5 h-[60px] border-b border-gray-800">
-        <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors">← {collection.label}</a>
-        <span class="text-gray-600">/</span>
+        {!collection.singleton && (
+          <>
+            <a href={`/cms/${collectionName}`} class="text-gray-400 hover:text-white text-sm transition-colors">← {collection.label}</a>
+            <span class="text-gray-600">/</span>
+          </>
+        )}
         <h1 class="text-sm font-semibold text-white font-mono">{slug}</h1>
       </div>
       <div class="p-6">
@@ -123,6 +127,7 @@ try {
         fields={collection.fields}
         initialValues={parsed.frontmatter}
         initialBody={parsed.body}
+        singleton={collection.singleton}
         collectionLabel={collection.label}
         collectionHref={`/cms/${collectionName}`}
         slug={slug!}

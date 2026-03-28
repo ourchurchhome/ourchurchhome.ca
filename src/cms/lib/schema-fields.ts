@@ -131,12 +131,41 @@ function resolveOne(
     const element = (inner._def as { element?: ZodTypeAny }).element;
 
     if (element) {
-      const elementType = inferType(element);
+      const unwrappedElement = unwrap(element);
+      const elementDefType = defType(unwrappedElement);
 
-      if (elementType === 'object') {
+      const isDiscriminatedUnion = elementDefType === 'union' && !!(unwrappedElement._def as { discriminator?: string }).discriminator;
+
+      if (isDiscriminatedUnion) {
+        // ── Discriminated union → Widgets ─────────────────────────────────
+        // Widgets must be explicitly declared in cms.config.ts; we don't
+        // auto-assign the control here. We do always resolve the variants so
+        // WidgetsControl has the data it needs regardless of where the override lives.
+        const discriminator = (unwrappedElement._def as { discriminator: string }).discriminator;
+        const options = (unwrappedElement._def as { options?: ZodTypeAny[] }).options ?? [];
+
+        field.discriminantKey = discriminator;
+        field.widgetVariants = options.map((variant) => {
+          const shape = (unwrap(variant)._def as { shape?: Record<string, ZodTypeAny> }).shape ?? {};
+          // Extract the literal string value of the discriminant field
+          const discriminantLiteral = unwrap(shape[discriminator]);
+          // Zod v4 literal uses _def.values (array), not _def.value
+          const rawValues = (discriminantLiteral._def as { values?: unknown[]; value?: unknown }).values;
+          const discriminantValue = String(
+            Array.isArray(rawValues) ? rawValues[0] : ((discriminantLiteral._def as { value?: unknown }).value ?? '')
+          );
+          // Resolve child fields, excluding the discriminant key itself
+          const children = Object.entries(shape)
+            .filter(([k]) => k !== discriminator)
+            .map(([k, v]) => resolveOne(k, v))
+            .filter((f): f is ResolvedField => f !== null);
+          return { discriminantValue, children };
+        });
+      } else if (elementDefType === 'object') {
+        // ── Plain object array → Table / Repeater ─────────────────────────
         // Always resolve child fields so Table/Repeater have their column definitions,
         // even when the control was explicitly overridden in cms.config.ts.
-        const shape = (unwrap(element)._def as { shape?: Record<string, ZodTypeAny> }).shape ?? {};
+        const shape = (unwrappedElement._def as { shape?: Record<string, ZodTypeAny> }).shape ?? {};
         const columnOverrides = override?.columns ?? {};
         const elementChildren = Object.entries(shape)
           .map(([k, v]) => resolveOne(k, v, columnOverrides[k]))
