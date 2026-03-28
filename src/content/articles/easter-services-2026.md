@@ -12,5 +12,3 @@ Easter is almost here! We invite everyone to celebrate the resurrection of Jesus
 **Easter Sunday** — April 5, 2026 Each congregation will hold their regular Sunday service, beginning with Mount Stewart at 9:00 AM, Morell at 10:30 AM, and St. Peters Bay at 11:30 AM.
 
 We look forward to worshipping together as a community of faith this Easter season!
-
-![image_fec708d5ed05.jpg](/images/image_fec708d5ed05.jpg)
