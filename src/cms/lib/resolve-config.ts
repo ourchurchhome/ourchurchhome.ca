@@ -17,12 +17,14 @@ export function resolveCollections(config: CmsConfig): ResolvedCollection[] {
     const cc = config.collections[name] ?? {};
     const fields = getFieldsForCollection(name, cc.fields ?? {});
 
+    const singleton = cc.singleton ?? false;
     return {
       name,
       label: collectionLabel(name),
-      singleton: cc.singleton ?? false,
+      singleton,
       allowCreate: cc.allowCreate ?? true,
       allowDelete: cc.allowDelete ?? true,
+      icon: cc.icon ?? (singleton ? '📄' : '📂'),
       fields,
       fileExtension: COLLECTION_EXTENSIONS[name] ?? 'md',
       basePath: COLLECTION_PATHS[name] ?? `src/content/${name}`,

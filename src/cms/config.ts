@@ -80,6 +80,12 @@ export interface CollectionConfig {
   /** Show the "Delete" action. Default: true. */
   allowDelete?: boolean;
   /**
+   * Icon shown in the sidebar next to the collection name.
+   * Any string is accepted — emoji work well (e.g. "📝").
+   * Defaults to 📄 for singletons and 📂 for group collections.
+   */
+  icon?: string;
+  /**
    * Presentation overrides for specific fields, keyed by field name.
    * These are merged on top of the auto-generated field config derived
    * from the collection's Zod schema — they never replace it.
@@ -163,6 +169,8 @@ export interface ResolvedCollection {
   singleton: boolean;
   allowCreate: boolean;
   allowDelete: boolean;
+  /** Icon shown in the sidebar. Defaults to 📄 (singleton) or 📂 (group). */
+  icon: string;
   /** Fields derived from the Zod schema, with overrides applied */
   fields: ResolvedField[];
   /** File extension used by this collection's content files */

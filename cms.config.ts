@@ -16,25 +16,29 @@ export default defineConfig({
       singleton: true,
       allowCreate: false,
       allowDelete: false,
+      icon: '📢',
     },
     articles: {
       allowCreate: true,
       allowDelete: true,
+      icon: '📝',
       fields: {
         draft: { hidden: true },
       },
     },
     churches: {
-      allowCreate: true,
-      allowDelete: true,
+      allowCreate: false,
+      allowDelete: false,
+      icon: '⛪',
       fields: {
         description: { control: 'TextArea' },
         image: { control: 'ImageUrl', label: 'Hero Image URL' },
       },
     },
     schedules: {
-      allowCreate: true,
-      allowDelete: true,
+      allowCreate: false,
+      allowDelete: false,
+      icon: '📅',
     },
   },
 });

@@ -11,16 +11,17 @@ export const prerender = false;
 import '../../styles/global.css';
 import cmsConfig from '../../../cms.config';
 import { resolveCollections } from '../lib/resolve-config';
-import CmsSidebar from '../components/CmsSidebar';
+import CmsSidebar, { CmsNavToggle } from '../components/CmsSidebar';
 
 const session = Astro.locals.session;
 if (!session) return Astro.redirect('/cms/login');
 const collections = resolveCollections(cmsConfig);
 
-const sidebarCollections = collections.map(({ name, label, singleton }) => ({
+const sidebarCollections = collections.map(({ name, label, singleton, icon }) => ({
   name,
   label,
   singleton,
+  icon,
 }));
 
 const currentPath = Astro.url.pathname;
@@ -34,7 +35,7 @@ const currentPath = Astro.url.pathname;
     <title>CMS — OurChurchHome</title>
     <meta name="robots" content="noindex, nofollow" />
   </head>
-  <body class="flex min-h-screen bg-gray-950 text-gray-100">
+  <body class="min-h-screen bg-gray-950 text-gray-100">
     <CmsSidebar
       client:load
       collections={sidebarCollections}
@@ -46,7 +47,10 @@ const currentPath = Astro.url.pathname;
       currentPath={currentPath}
     />
 
-    <main class="flex-1 overflow-y-auto">
+    <main class="min-h-screen lg:pl-64">
+      <div class="lg:hidden flex items-center px-4 py-3 border-b border-gray-800">
+        <CmsNavToggle client:load />
+      </div>
       <slot />
     </main>
   </body>
