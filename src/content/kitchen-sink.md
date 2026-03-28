@@ -26,6 +26,15 @@ sections:
   - heading: Second Section
     content: Another entry in the repeater.
     featured: false
+widgets:
+  - type: callout
+    heading: Welcome to the kitchen sink
+    body: This callout widget demonstrates the info tone.
+    tone: info
+  - type: image
+    url: https://example.com/sample.jpg
+    caption: A sample image widget with a caption.
+    fullWidth: false
 ---
 
 # Kitchen Sink
