@@ -1,0 +1,120 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const churches = await getCollection('churches');
+  return churches.map((church) => ({
+    params: { id: church.id },
+    props: { church },
+  }));
+};
+
+const { church } = Astro.props;
+const { Content } = await render(church);
+
+const allSchedules = await getCollection('schedules');
+const churchSchedules = allSchedules.filter((s) => s.data.church === church.id);
+
+const today = new Date().toISOString().slice(0, 10);
+
+function upcomingEntries(entries: { date: string; name: string }[]) {
+  return entries
+    .filter((e) => e.date >= today)
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .slice(0, 5);
+}
+
+const scheduleTypes = ['greeter', 'reader', 'cleaner'] as const;
+type ScheduleType = typeof scheduleTypes[number];
+
+const scheduleMap: Record<ScheduleType, { date: string; name: string }[]> = {
+  greeter: [],
+  reader: [],
+  cleaner: [],
+};
+
+for (const s of churchSchedules) {
+  scheduleMap[s.data.type] = upcomingEntries(s.data.entries);
+}
+
+const scheduleIcons: Record<ScheduleType, string> = {
+  greeter: 'waving_hand',
+  reader: 'menu_book',
+  cleaner: 'cleaning_services',
+};
+---
+
+<BaseLayout title={church.data.title} description={church.data.description}>
+
+  <!-- Church hero banner -->
+  <div class="hero-gradient py-16">
+    <div class="max-w-7xl mx-auto px-6">
+      <nav class="text-sm text-on-primary/60 mb-4" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-on-primary transition-colors">Home</a>
+        <span class="mx-2">›</span>
+        <span class="text-on-primary/80">{church.data.title}</span>
+      </nav>
+      <div class="flex items-center gap-3 mb-3">
+        <span class="material-symbols-outlined text-tertiary-fixed-dim text-3xl select-none" aria-hidden="true">church</span>
+        <h1 class="font-headline text-4xl md:text-5xl font-bold text-on-primary leading-tight">{church.data.title}</h1>
+      </div>
+      <div class="flex flex-wrap gap-x-6 gap-y-2 mt-4 text-sm text-on-primary/75">
+        <span class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base text-tertiary-fixed-dim select-none" aria-hidden="true">schedule</span>
+          {church.data.serviceTime}
+        </span>
+        <span class="flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-base text-tertiary-fixed-dim select-none" aria-hidden="true">location_on</span>
+          {church.data.address}
+        </span>
+      </div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 py-12">
+
+    <!-- About -->
+    <section class="mb-14 max-w-2xl">
+      <h2 class="font-headline text-2xl font-bold text-primary mb-4">About This Church</h2>
+      <div class="prose">
+        <Content />
+      </div>
+    </section>
+
+    <!-- Schedules -->
+    <section aria-labelledby="schedules-heading">
+      <div class="mb-8">
+        <span class="text-secondary font-label font-bold tracking-[0.3em] uppercase block mb-2 text-sm">Volunteer Rosters</span>
+        <h2 id="schedules-heading" class="font-headline text-3xl font-bold text-primary">Upcoming Schedules</h2>
+      </div>
+      <div class="grid gap-6 sm:grid-cols-3">
+        {scheduleTypes.map((type) => (
+            <div class="bg-surface-container-low border border-outline-variant rounded-xl p-6">
+              <div class="flex items-center gap-2 mb-4">
+                <span class="material-symbols-outlined text-tertiary text-xl select-none" aria-hidden="true">{scheduleIcons[type]}</span>
+                <h3 class="font-headline text-lg font-bold text-primary capitalize">{type}s</h3>
+              </div>
+              {scheduleMap[type].length > 0 ? (
+                <ul class="space-y-3">
+                  {scheduleMap[type].map((entry) => (
+                    <li class="flex justify-between items-baseline gap-2 text-sm border-b border-outline-variant/50 pb-2 last:border-0 last:pb-0">
+                      <span class="text-outline shrink-0 tabular-nums">
+                        {new Date(entry.date + 'T00:00:00').toLocaleDateString('en-CA', { month: 'short', day: 'numeric' })}
+                      </span>
+                      <span class="text-on-surface font-medium text-right">{entry.name}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p class="text-sm text-outline italic">No upcoming entries.</p>
+              )}
+            </div>
+        ))}
+      </div>
+    </section>
+
+  </div>
+</BaseLayout>
+

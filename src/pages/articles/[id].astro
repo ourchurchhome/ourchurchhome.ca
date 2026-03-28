@@ -1,0 +1,69 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection, render } from 'astro:content';
+import type { GetStaticPaths } from 'astro';
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  const articles = await getCollection('articles', ({ data }) => !data.draft);
+  return articles.map((article) => ({
+    params: { id: article.id },
+    props: { article },
+  }));
+};
+
+const { article } = Astro.props;
+const { Content } = await render(article);
+---
+
+<BaseLayout title={article.data.title} description={article.data.description}>
+
+  <!-- Article hero -->
+  <div class="hero-gradient py-14">
+    <div class="max-w-7xl mx-auto px-6">
+      <nav class="text-sm text-on-primary/60 mb-4" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-on-primary transition-colors">Home</a>
+        <span class="mx-2">›</span>
+        <a href="/articles" class="hover:text-on-primary transition-colors">News &amp; Updates</a>
+        <span class="mx-2">›</span>
+        <span class="text-on-primary/80">{article.data.title}</span>
+      </nav>
+      <div class="flex flex-wrap items-center gap-3 mb-4">
+        <span class="inline-block text-xs font-label font-semibold uppercase tracking-wider text-on-secondary bg-secondary px-2.5 py-1 rounded capitalize">
+          {article.data.category}
+        </span>
+        <span class="text-on-primary/60 text-sm">
+          {article.data.date.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
+        </span>
+      </div>
+      <h1 class="font-headline text-4xl md:text-5xl font-bold text-on-primary leading-tight max-w-3xl">
+        {article.data.title}
+      </h1>
+      {article.data.description && (
+        <p class="text-on-primary/80 text-lg mt-4 max-w-2xl leading-relaxed font-light">
+          {article.data.description}
+        </p>
+      )}
+    </div>
+  </div>
+
+  <!-- Article body -->
+  <div class="max-w-7xl mx-auto px-6 py-12">
+    <div class="max-w-2xl">
+      <article class="prose">
+        <Content />
+      </article>
+
+      <div class="mt-12 pt-6 border-t border-outline-variant">
+        <a
+          href="/articles"
+          class="inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:underline transition-colors"
+        >
+          <span class="material-symbols-outlined text-base select-none" aria-hidden="true">arrow_back</span>
+          Back to News &amp; Updates
+        </a>
+      </div>
+    </div>
+  </div>
+
+</BaseLayout>
+

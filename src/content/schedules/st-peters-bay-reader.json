@@ -1,0 +1,12 @@
+{
+  "church": "st-peters-bay",
+  "type": "reader",
+  "entries": [
+    { "date": "2026-04-05", "name": "Wilfred MacPherson" },
+    { "date": "2026-04-12", "name": "Stella Gallant" },
+    { "date": "2026-04-19", "name": "Norman Stewart" },
+    { "date": "2026-04-26", "name": "Edna MacEachern" },
+    { "date": "2026-05-03", "name": "Bernard Clements" }
+  ]
+}
+

@@ -1,0 +1,88 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getCollection } from 'astro:content';
+
+const articles = await getCollection('articles', ({ data }) => !data.draft);
+const sorted = articles.sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+
+const categories = ['all', ...new Set(sorted.map((a) => a.data.category))] as const;
+
+const selectedCategory = (Astro.url.searchParams.get('category') ?? 'all') as string;
+
+const filtered = selectedCategory === 'all'
+  ? sorted
+  : sorted.filter((a) => a.data.category === selectedCategory);
+---
+
+<BaseLayout title="News & Updates" description="Announcements and updates from the Pastoral Charge.">
+
+  <!-- Page hero -->
+  <div class="hero-gradient py-14">
+    <div class="max-w-7xl mx-auto px-6">
+      <nav class="text-sm text-on-primary/60 mb-4" aria-label="Breadcrumb">
+        <a href="/" class="hover:text-on-primary transition-colors">Home</a>
+        <span class="mx-2">›</span>
+        <span class="text-on-primary/80">News &amp; Updates</span>
+      </nav>
+      <h1 class="font-headline text-4xl md:text-5xl font-bold text-on-primary">News &amp; Updates</h1>
+      <p class="text-on-primary/75 mt-3 text-lg">Announcements, reflections, and happenings from across the Charge.</p>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-6 py-12">
+
+    <!-- Category filter -->
+    <div class="flex flex-wrap gap-2 mb-10" role="group" aria-label="Filter by category">
+      {categories.map((cat) => {
+        const isActive = selectedCategory === cat;
+        return (
+          <a
+            href={cat === 'all' ? '/articles' : `/articles?category=${cat}`}
+            class={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-150 ${
+              isActive
+                ? 'bg-primary text-on-primary border-primary'
+                : 'bg-surface-container-low text-on-surface-variant border-outline-variant hover:border-secondary hover:text-secondary'
+            }`}
+            aria-current={isActive ? 'page' : undefined}
+          >
+            <span class="capitalize">{cat}</span>
+          </a>
+        );
+      })}
+    </div>
+
+    {filtered.length > 0 ? (
+      <ul class="space-y-5">
+        {filtered.map((article) => (
+          <li>
+            <a href={`/articles/${article.id}`} class="group flex gap-5 bg-surface-container-low border border-outline-variant rounded-xl p-6 hover:border-secondary hover:shadow-sm transition-all duration-200">
+              <div class="flex-1 min-w-0">
+                <div class="flex flex-wrap items-center gap-2 mb-2">
+                  <span class="inline-block text-xs font-label font-semibold uppercase tracking-wider text-on-secondary bg-secondary px-2 py-0.5 rounded capitalize">
+                    {article.data.category}
+                  </span>
+                  <span class="text-xs text-outline">
+                    {article.data.date.toLocaleDateString('en-CA', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
+                </div>
+                <h2 class="font-headline text-xl font-bold text-primary group-hover:text-secondary mb-1 transition-colors">
+                  {article.data.title}
+                </h2>
+                {article.data.description && (
+                  <p class="text-on-surface-variant text-sm leading-relaxed">{article.data.description}</p>
+                )}
+              </div>
+              <span class="material-symbols-outlined text-outline group-hover:text-secondary transition-colors self-center shrink-0 select-none" aria-hidden="true">arrow_forward</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div class="text-center py-20 text-outline">
+        <span class="material-symbols-outlined text-5xl block mb-3" aria-hidden="true">article</span>
+        <p class="text-lg">No articles found for this category.</p>
+      </div>
+    )}
+  </div>
+</BaseLayout>
+

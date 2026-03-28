@@ -1,0 +1,12 @@
+{
+  "church": "mount-stewart",
+  "type": "greeter",
+  "entries": [
+    { "date": "2026-04-05", "name": "Florence MacLean" },
+    { "date": "2026-04-12", "name": "William Fraser" },
+    { "date": "2026-04-19", "name": "Nancy MacQuarrie" },
+    { "date": "2026-04-26", "name": "Thomas Gillis" },
+    { "date": "2026-05-03", "name": "Dorothy Campbell" }
+  ]
+}
+

@@ -1,0 +1,12 @@
+{
+  "church": "mount-stewart",
+  "type": "cleaner",
+  "entries": [
+    { "date": "2026-04-05", "name": "Leonard MacIsaac" },
+    { "date": "2026-04-12", "name": "Beatrice Dunn" },
+    { "date": "2026-04-19", "name": "Harold MacKay" },
+    { "date": "2026-04-26", "name": "Violet Arsenault" },
+    { "date": "2026-05-03", "name": "Clifford Murray" }
+  ]
+}
+

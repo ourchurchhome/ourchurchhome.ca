@@ -1,0 +1,12 @@
+{
+  "church": "morell",
+  "type": "greeter",
+  "entries": [
+    { "date": "2026-04-05", "name": "Mary MacLeod" },
+    { "date": "2026-04-12", "name": "John Campbell" },
+    { "date": "2026-04-19", "name": "Susan MacPherson" },
+    { "date": "2026-04-26", "name": "Robert MacDonald" },
+    { "date": "2026-05-03", "name": "Linda Stewart" }
+  ]
+}
+
