@@ -1,42 +1,42 @@
 {
   "widgets": [
     {
-      "type": "hero",
-      "title": "Welcome Home to Community",
-      "subtitle": "A place of grace, heritage, and hope across Mount Stewart, Morell, and St. Peters Bay. Join us as we journey together in faith.",
-      "image": "https://images.unsplash.com/photo-1438032005730-c779502df39b?auto=format&fit=crop&w=1600&q=80",
       "buttons": [
         {
-          "primary": true,
           "copy": "Visit a Church",
+          "primary": true,
           "url": "/churches/morell"
         },
         {
+          "copy": "News \u0026 Updates",
           "primary": false,
-          "copy": "News & Updates",
           "url": "/articles"
         }
-      ]
+      ],
+      "image": "/public/images/photo-1438032005730-c779502df39b.jpeg",
+      "subtitle": "A place of grace, heritage, and hope across Mount Stewart, Morell, and St. Peters Bay. Join us as we journey together in faith.",
+      "title": "Welcome Home to Community",
+      "type": "hero"
     },
     {
-      "type": "news",
-      "title": "News & Updates",
-      "subtitle": "Latest"
+      "subtitle": "Latest",
+      "title": "News \u0026 Updates",
+      "type": "news"
     },
     {
-      "type": "vision",
-      "title": "Our Shared Vision",
       "body": "We are a multi-point charge dedicated to fostering a spirit of inclusivity, compassion, and spiritual growth. Our roots run deep in the red soil of Prince Edward Island, but our branches reach out to embrace the future.",
-      "quote": "To be a vibrant, welcoming community of faith that lives out God's love through service, sanctuary, and song.",
       "communityCount": 3,
-      "yearsOfGrace": "50+",
+      "ctaDescription": "Whether you are a lifelong member, a curious visitor, or someone seeking community for the first time — our doors are open. Come as you are.",
       "ctaTitle": "All Are Welcome",
-      "ctaDescription": "Whether you are a lifelong member, a curious visitor, or someone seeking community for the first time — our doors are open. Come as you are."
+      "quote": "To be a vibrant, welcoming community of faith that lives out God's love through service, sanctuary, and song.",
+      "title": "Our Shared Vision",
+      "type": "vision",
+      "yearsOfGrace": "50+"
     },
     {
-      "type": "churches",
+      "subtitle": "Our Congregations",
       "title": "Three Churches, One Charge",
-      "subtitle": "Our Congregations"
+      "type": "churches"
     }
   ]
 }
