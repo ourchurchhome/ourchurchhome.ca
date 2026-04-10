@@ -203,7 +203,7 @@ contentModels:
 mediaCollections:
   - name: public-images
     path: public/images/**/*
-    embedPathTemplate: /public/images/{{.FileName}}.{{.Ext}}
+    embedPathTemplate: /images/{{.FileName}}.{{.Ext}}
     allowedMimes:
       - image/jpeg
       - image/png
