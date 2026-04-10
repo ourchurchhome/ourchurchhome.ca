@@ -177,11 +177,11 @@ contentModels:
             type: string
           - name: quote
             type: string
-          - name: communityCount
+          - name: community_count
             type: integer
-          - name: yearsOfGrace
+          - name: years_of_grace
             type: string
-          - name: ctaTitle
+          - name: cta_title
             type: string
-          - name: ctaDescription
+          - name: cta_description
             type: string

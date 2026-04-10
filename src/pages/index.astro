@@ -32,8 +32,9 @@ if (draftParam) {
     if (parsed.success) {
       widgets = parsed.data.widgets ?? [];
     }
-  } catch {
-    // Malformed draft param — fall back to an empty widget list
+  } catch (e) {
+    // Malformed draft param - error
+    throw e
   }
   const bypassToken = import.meta.env.ISR_SECRET;
   if (bypassToken) {
