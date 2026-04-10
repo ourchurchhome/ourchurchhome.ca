@@ -6,9 +6,14 @@ version: 1
 contentModels:
   # ── Churches ───────────────────────────────────────────────────────────────
   - name: churches
-    path: "src/content/churches/**/*.md"
+    path: "src/content/churches/*/*.md"
     format: markdown
     frontmatter_format: yaml
+    operations:
+      create: false
+      read: true
+      update: true
+      destroy: false
     fields:
       - name: title
         type: string
@@ -27,7 +32,7 @@ contentModels:
 
   # ── Articles ───────────────────────────────────────────────────────────────
   - name: articles
-    path: "src/content/articles/**/*.md"
+    path: "src/content/articles/*.md"
     format: markdown
     frontmatter_format: yaml
     fields:
@@ -80,8 +85,13 @@ contentModels:
 
   # ── Schedules ──────────────────────────────────────────────────────────────
   - name: schedules
-    path: "src/content/schedules/**/*.json"
+    path: "src/content/schedules/*.json"
     format: json
+    operations:
+      create: false
+      read: true
+      update: true
+      destroy: false
     fields:
       - name: church
         type: string
