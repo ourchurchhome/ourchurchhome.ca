@@ -25,7 +25,7 @@ const draftParam = Astro.url.searchParams.get('draft');
 
 let widgets: NonNullable<ReturnType<typeof homepageSchema.parse>['widgets']> = [];
 
-console.log("Has draft param", !!draftParam)
+console.warn("Has draft param", !!draftParam)
 
 if (draftParam) {
   try {
