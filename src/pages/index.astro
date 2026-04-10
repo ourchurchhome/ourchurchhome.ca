@@ -25,16 +25,18 @@ const draftParam = Astro.url.searchParams.get('draft');
 
 let widgets: NonNullable<ReturnType<typeof homepageSchema.parse>['widgets']> = [];
 
+console.log("Has draft param", !!draftParam)
+
 if (draftParam) {
   try {
     const json = Buffer.from(draftParam, 'base64').toString('utf8');
     const parsed = homepageSchema.safeParse(JSON.parse(json));
+    console.warn({ parsed })
     if (parsed.success) {
       widgets = parsed.data.widgets ?? [];
     }
   } catch (e) {
-    // Malformed draft param - error
-    throw e
+    console.error(e.message)
   }
   const bypassToken = import.meta.env.ISR_SECRET;
   if (bypassToken) {
