@@ -45,6 +45,7 @@ contentModels:
         required: true
         display:
           description: "ISO date (YYYY-MM-DD)"
+          component: date
       - name: category
         type: string
         required: true
@@ -116,6 +117,7 @@ contentModels:
             required: true
             display:
               description: "ISO date (YYYY-MM-DD)"
+              component: date
           - name: name
             type: string
             required: true
