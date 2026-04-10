@@ -9,6 +9,7 @@ contentModels:
     path: "src/content/churches/*.md"
     format: markdown
     frontmatter_format: yaml
+    previewUrl: https://ourchurchhome-ca-sage.vercel.app/churches/{{slug}}
     operations:
       create: false
       read: true
@@ -33,6 +34,7 @@ contentModels:
   # ── Articles ───────────────────────────────────────────────────────────────
   - name: articles
     path: "src/content/articles/*.md"
+    previewUrl: https://ourchurchhome-ca-sage.vercel.app/articles/{{filename}}
     format: markdown
     frontmatter_format: yaml
     fields:
@@ -76,6 +78,7 @@ contentModels:
   # ── Banner (singleton) ─────────────────────────────────────────────────────
   - name: banner
     path: "src/content/banner.md"
+    previewUrl: https://ourchurchhome-ca-sage.vercel.app/
     format: markdown
     frontmatter_format: yaml
     operations:
@@ -91,6 +94,7 @@ contentModels:
   # ── Schedules ──────────────────────────────────────────────────────────────
   - name: schedules
     path: "src/content/schedules/*.json"
+    previewUrl: https://ourchurchhome-ca-sage.vercel.app/churches/{{church}}
     format: json
     operations:
       create: false
@@ -129,6 +133,7 @@ contentModels:
   # ── Homepage (singleton) ───────────────────────────────────────────────────
   - name: homepage
     path: "src/content/homepage.json"
+    previewUrl: https://ourchurchhome-ca-sage.vercel.app/
     format: json
     operations:
       create: false
