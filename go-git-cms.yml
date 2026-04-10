@@ -145,54 +145,60 @@ contentModels:
     fields:
       - name: widgets
         type: array
+        homogenous: false
         fields:
-          - name: type
-            type: string
-            required: true
-            enum:
-              - hero
-              - news
-              - vision
-              - churches
-            display:
-              component: select
-          # Shared / hero / news / churches
-          - name: title
-            type: string
-          - name: subtitle
-            type: string
-          # Hero only
-          - name: image
-            type: string
-            display:
-              component: media
-              config:
+          hero:
+            - name: title
+              type: string
+              required: true
+            - name: subtitle
+              type: string
+            - name: image
+              type: string
+              display:
+                component: media
+                config:
                   collection: public-images
-          - name: buttons
-            type: array
-            fields:
-              - name: primary
-                type: boolean
-                default: false
-              - name: copy
-                type: string
-                required: true
-              - name: url
-                type: string
-                required: true
-          # Vision only
-          - name: body
-            type: string
-          - name: quote
-            type: string
-          - name: community_count
-            type: integer
-          - name: years_of_grace
-            type: string
-          - name: cta_title
-            type: string
-          - name: cta_description
-            type: string
+            - name: buttons
+              type: array
+              fields:
+                - name: primary
+                  type: boolean
+                  default: false
+                - name: copy
+                  type: string
+                  required: true
+                - name: url
+                  type: string
+                  required: true
+          news:
+            - name: title
+              type: string
+              required: true
+            - name: subtitle
+              type: string
+          vision:
+            - name: title
+              type: string
+              required: true
+            - name: body
+              type: string
+            - name: quote
+              type: string
+            - name: communityCount
+              type: integer
+            - name: yearsOfGrace
+              type: string
+            - name: ctaTitle
+              type: string
+            - name: ctaDescription
+              type: string
+          churches:
+            - name: title
+              type: string
+              required: true
+            - name: subtitle
+              type: string
 
 mediaCollections:
   - name: public-images
