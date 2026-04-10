@@ -1,4 +1,4 @@
-# yaml-language-server: $schema=https://app.gogitcms.com/schemas/go-git-cms.json
+# yaml-language-server: $schema=https://api-dev.gogitcms.com/schemas/go-git-cms.json
 # GoGitCMS schema configuration
 # See: https://docs.gogitcms.com/schema
 
@@ -30,6 +30,10 @@ contentModels:
         type: string
       - name: image
         type: string
+        display:
+          component: media
+          config:
+              collection: public-images
 
   # ── Articles ───────────────────────────────────────────────────────────────
   - name: articles
@@ -160,6 +164,10 @@ contentModels:
           # Hero only
           - name: image
             type: string
+            display:
+              component: media
+              config:
+                  collection: public-images
           - name: buttons
             type: array
             fields:
@@ -185,3 +193,8 @@ contentModels:
             type: string
           - name: cta_description
             type: string
+
+mediaCollections:
+  - name: public-images
+    path: /public/images/*
+    embedPathTemplate: /public/images/{{file}}
