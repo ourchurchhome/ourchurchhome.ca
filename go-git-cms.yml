@@ -6,7 +6,7 @@ version: 1
 contentModels:
   # ── Churches ───────────────────────────────────────────────────────────────
   - name: churches
-    path: "src/content/churches/*/*.md"
+    path: "src/content/churches/*.md"
     format: markdown
     frontmatter_format: yaml
     operations:
