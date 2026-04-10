@@ -54,6 +54,8 @@ contentModels:
           - news
           - reflection
           - general
+        display:
+          component: select
       - name: church
         type: string
         required: true
@@ -63,6 +65,8 @@ contentModels:
           - mount-stewart
           - st-peters-bay
           - all
+        display:
+          component: select
       - name: description
         type: string
       - name: draft
@@ -141,6 +145,8 @@ contentModels:
               - news
               - vision
               - churches
+            display:
+              component: select
           # Shared / hero / news / churches
           - name: title
             type: string
