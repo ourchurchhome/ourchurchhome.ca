@@ -12,7 +12,7 @@ export default defineConfig({
   output: 'static',
   adapter: vercel({
     isr: {
-      bypassToken: import.meta.env.ISR_SECRET,
+      bypassToken: process.env.ISR_SECRET || import.meta.env.ISR_SECRET,
     },
   }),
   integrations: [react()],
