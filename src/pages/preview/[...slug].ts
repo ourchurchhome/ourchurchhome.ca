@@ -39,9 +39,16 @@ export const GET: APIRoute = ({ params, request }: { params: Record<string, stri
     // subsequent visitor.
     'Cache-Control': 'private, no-store, no-cache, must-revalidate, max-age=0',
   });
-  const token = import.meta.env.ISR_SECRET;
+  // Read from process.env first — import.meta.env only contains values
+  // inlined at build time, so on Vercel a runtime-set ISR_SECRET would be
+  // missing here and the bypass cookie would silently never get set.
+  const token =
+    (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env?.ISR_SECRET ??
+    (import.meta as unknown as { env?: Record<string, string | undefined> }).env?.ISR_SECRET;
   if (token) {
     headers.append('Set-Cookie', setBypassCookie(token));
+  } else {
+    console.warn('[preview] ISR_SECRET not set — bypass cookie skipped, target page will serve from ISR cache');
   }
 
   return new Response(null, { status: 302, headers });
