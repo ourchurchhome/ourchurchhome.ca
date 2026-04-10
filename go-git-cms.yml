@@ -135,7 +135,7 @@ contentModels:
   # ── Homepage (singleton) ───────────────────────────────────────────────────
   - name: homepage
     path: "src/content/homepage.json"
-    previewUrl: https://ourchurchhome-ca-sage.vercel.app/preview/
+    previewUrl: https://ourchurchhome-ca-sage.vercel.app/preview
     format: json
     operations:
       create: false
