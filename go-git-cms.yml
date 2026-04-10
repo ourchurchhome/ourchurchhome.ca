@@ -1,0 +1,164 @@
+# yaml-language-server: $schema=https://app.gogitcms.com/schemas/go-git-cms.json
+# GoGitCMS schema configuration
+# See: https://docs.gogitcms.com/schema
+
+version: 1
+contentModels:
+  # ── Churches ───────────────────────────────────────────────────────────────
+  - name: churches
+    path: "src/content/churches/**/*.md"
+    format: markdown
+    frontmatter_format: yaml
+    fields:
+      - name: title
+        type: string
+        required: true
+        entry_title: true
+      - name: address
+        type: string
+        required: true
+      - name: serviceTime
+        type: string
+        required: true
+      - name: description
+        type: string
+      - name: image
+        type: string
+
+  # ── Articles ───────────────────────────────────────────────────────────────
+  - name: articles
+    path: "src/content/articles/**/*.md"
+    format: markdown
+    frontmatter_format: yaml
+    fields:
+      - name: title
+        type: string
+        required: true
+        entry_title: true
+      - name: date
+        type: string
+        required: true
+        display:
+          description: "ISO date (YYYY-MM-DD)"
+      - name: category
+        type: string
+        required: true
+        enum:
+          - announcement
+          - news
+          - reflection
+          - general
+      - name: church
+        type: string
+        required: true
+        default: all
+        enum:
+          - morell
+          - mount-stewart
+          - st-peters-bay
+          - all
+      - name: description
+        type: string
+      - name: draft
+        type: boolean
+        default: false
+
+  # ── Banner (singleton) ─────────────────────────────────────────────────────
+  - name: banner
+    path: "src/content/banner.md"
+    format: markdown
+    frontmatter_format: yaml
+    operations:
+      create: false
+      destroy: false
+    fields:
+      - name: enabled
+        type: boolean
+        default: false
+      - name: link
+        type: string
+
+  # ── Schedules ──────────────────────────────────────────────────────────────
+  - name: schedules
+    path: "src/content/schedules/**/*.json"
+    format: json
+    fields:
+      - name: church
+        type: string
+        required: true
+        entry_title: true
+        enum:
+          - morell
+          - mount-stewart
+          - st-peters-bay
+      - name: type
+        type: string
+        required: true
+        enum:
+          - greeter
+          - reader
+          - cleaner
+      - name: entries
+        type: array
+        fields:
+          - name: date
+            type: string
+            required: true
+            display:
+              description: "ISO date (YYYY-MM-DD)"
+          - name: name
+            type: string
+            required: true
+
+  # ── Homepage (singleton) ───────────────────────────────────────────────────
+  - name: homepage
+    path: "src/content/homepage.json"
+    format: json
+    operations:
+      create: false
+      destroy: false
+    fields:
+      - name: widgets
+        type: array
+        fields:
+          - name: type
+            type: string
+            required: true
+            enum:
+              - hero
+              - news
+              - vision
+              - churches
+          # Shared / hero / news / churches
+          - name: title
+            type: string
+          - name: subtitle
+            type: string
+          # Hero only
+          - name: image
+            type: string
+          - name: buttons
+            type: array
+            fields:
+              - name: primary
+                type: boolean
+                default: false
+              - name: copy
+                type: string
+                required: true
+              - name: url
+                type: string
+                required: true
+          # Vision only
+          - name: body
+            type: string
+          - name: quote
+            type: string
+          - name: communityCount
+            type: integer
+          - name: yearsOfGrace
+            type: string
+          - name: ctaTitle
+            type: string
+          - name: ctaDescription
+            type: string
