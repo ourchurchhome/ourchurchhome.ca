@@ -132,7 +132,7 @@ export const homepageSchema = z.object({
       type: z.literal('hero'),
       title: z.string(),
       subtitle: z.string().optional(),
-      image: z.string().url().optional(),
+      image: z.string().optional(),
       buttons: z.array(z.object({
         primary: z.boolean().default(false),
         copy: z.string(),
