@@ -9,7 +9,7 @@ contentModels:
     path: "src/content/churches/*.md"
     format: markdown
     frontmatter_format: yaml
-    previewUrl: https://ourchurchhome-ca-sage.vercel.app/preview/churches/{{slug}}
+    previewUrl: https://ourchurchhome-ca-sage.vercel.app/preview/churches/{{filename}}
     operations:
       create: false
       read: true
