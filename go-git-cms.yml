@@ -83,6 +83,7 @@ contentModels:
   - name: banner
     path: "src/content/banner.md"
     format: markdown
+    previewUrl: /
     frontmatter_format: yaml
     operations:
       create: false
