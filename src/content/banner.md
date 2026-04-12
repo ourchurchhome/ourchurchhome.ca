@@ -1,5 +1,5 @@
 ---
-enabled: true
+enabled: false
 link: https://ourchurchhome-ca-sage.vercel.app/
 ---
 
