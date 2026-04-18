@@ -198,8 +198,8 @@ content_models:
 media_collections:
     - name: public-images
       path: public/images/**/*
-      embedPathTemplate: /images/{{.Filename}}.{{.Ext}}
-      allowedMimes:
+      embed_path_template: /images/{{.Filename}}.{{.Ext}}
+      allowed_mimes:
         - image/jpeg
         - image/png
         - image/webp
