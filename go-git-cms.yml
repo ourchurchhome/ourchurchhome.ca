@@ -130,7 +130,7 @@ content_models:
         read: true
         update: true
         destroy: false
-      preview_url: /churches/{{.Church}}
+      preview_url: /churches/{{.church}}
     - name: homepage
       path: src/content/homepage.json
       format: json
