@@ -98,6 +98,10 @@ contentModels:
           name: type
           required: true
           type: string
+          enum:
+            - morell
+            - mount-stewart
+            - st-peters-bay
         - display:
             component: table
           fields:
