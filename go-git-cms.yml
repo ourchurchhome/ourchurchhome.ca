@@ -90,6 +90,7 @@ contentModels:
       format: json
       fields:
         - name: title
+          entry_title: true
           required: true
           type: string
           display:
