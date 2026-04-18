@@ -28,7 +28,7 @@ contentModels:
         read: true
         update: true
         destroy: false
-      previewUrl: /churches/{{filename}}
+      previewUrl: /churches/{{.Filename}}
     - name: articles
       path: src/content/articles/*.md
       format: markdown
@@ -70,7 +70,7 @@ contentModels:
         - default: false
           name: draft
           type: boolean
-      previewUrl: /articles/{{filename}}
+      previewUrl: /articles/{{.Filename}}
     - name: banner
       path: src/content/banner.md
       format: markdown
@@ -130,7 +130,7 @@ contentModels:
         read: true
         update: true
         destroy: false
-      previewUrl: /churches/{{church}}
+      previewUrl: /churches/{{.Church}}
     - name: homepage
       path: src/content/homepage.json
       format: json
@@ -198,7 +198,7 @@ contentModels:
 mediaCollections:
     - name: public-images
       path: public/images/**/*
-      embedPathTemplate: /images/{{.FileName}}.{{.Ext}}
+      embedPathTemplate: /images/{{.Filename}}.{{.Ext}}
       allowedMimes:
         - image/jpeg
         - image/png
