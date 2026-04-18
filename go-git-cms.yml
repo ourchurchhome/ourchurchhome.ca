@@ -93,7 +93,9 @@ contentModels:
           name: church
           required: true
           type: string
-        - name: type
+        - display:
+            component: select
+          name: type
           required: true
           type: string
         - display:
