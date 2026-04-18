@@ -93,15 +93,19 @@ contentModels:
           name: church
           required: true
           type: string
+          enum:
+            - morell
+            - mount-stewart
+            - st-peters-bay
         - display:
             component: select
           name: type
           required: true
           type: string
           enum:
-            - morell
-            - mount-stewart
-            - st-peters-bay
+            - cleaner
+            - greeter
+            - reader
         - display:
             component: table
           fields:
