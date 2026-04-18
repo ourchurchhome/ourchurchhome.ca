@@ -1,0 +1,13 @@
+{
+  "title": "Mount Stewart Readers",
+  "church": "mount-stewart",
+  "type": "reader",
+  "entries": [
+    { "date": "2026-04-05", "name": "Margaret MacMillan" },
+    { "date": "2026-04-12", "name": "Kenneth Bernard" },
+    { "date": "2026-04-19", "name": "Alice MacNeill" },
+    { "date": "2026-04-26", "name": "Gordon Stewart" },
+    { "date": "2026-05-03", "name": "Irene Gallant" }
+  ]
+}
+

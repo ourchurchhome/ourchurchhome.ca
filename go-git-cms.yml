@@ -89,8 +89,12 @@ contentModels:
       path: src/content/schedules/*.json
       format: json
       fields:
-        - entry_title: true
-          name: church
+        - name: title
+          required: true
+          type: string
+          display:
+            hidden: true
+        - name: church
           required: true
           type: string
           enum:
