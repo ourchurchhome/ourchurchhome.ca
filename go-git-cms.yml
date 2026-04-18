@@ -1,212 +1,192 @@
-# yaml-language-server: $schema=https://api-dev.gogitcms.com/schemas/go-git-cms.json
-# GoGitCMS schema configuration
-# See: https://docs.gogitcms.com/schema
-
 version: 1
 contentModels:
-  # ── Churches ───────────────────────────────────────────────────────────────
-  - name: churches
-    path: "src/content/churches/*.md"
-    format: markdown
-    frontmatter_format: yaml
-    previewUrl: /churches/{{filename}}
-    operations:
-      create: false
-      read: true
-      update: true
-      destroy: false
-    fields:
-      - name: title
-        type: string
-        required: true
-        entry_title: true
-      - name: address
-        type: string
-        required: true
-      - name: serviceTime
-        type: string
-        required: true
-      - name: description
-        type: string
-      - name: image
-        type: string
-        display:
-          component: media
-          config:
-              collection: public-images
-
-  # ── Articles ───────────────────────────────────────────────────────────────
-  - name: articles
-    path: "src/content/articles/*.md"
-    previewUrl: /articles/{{filename}}
-    format: markdown
-    frontmatter_format: yaml
-    fields:
-      - name: title
-        type: string
-        required: true
-        entry_title: true
-      - name: date
-        type: string
-        required: true
-        display:
-          description: "ISO date (YYYY-MM-DD)"
-          component: date
-      - name: category
-        type: string
-        required: true
-        enum:
-          - announcement
-          - news
-          - reflection
-          - general
-        display:
-          component: select
-      - name: church
-        type: string
-        required: true
-        default: all
-        enum:
-          - morell
-          - mount-stewart
-          - st-peters-bay
-          - all
-        display:
-          component: select
-      - name: description
-        type: string
-      - name: draft
-        type: boolean
-        default: false
-
-  # ── Banner (singleton) ─────────────────────────────────────────────────────
-  - name: banner
-    path: "src/content/banner.md"
-    format: markdown
-    previewUrl: /
-    frontmatter_format: yaml
-    operations:
-      create: false
-      destroy: false
-    fields:
-      - name: enabled
-        type: boolean
-        default: false
-      - name: link
-        type: string
-
-  # ── Schedules ──────────────────────────────────────────────────────────────
-  - name: schedules
-    path: "src/content/schedules/*.json"
-    previewUrl: /churches/{{church}}
-    format: json
-    operations:
-      create: false
-      read: true
-      update: true
-      destroy: false
-    fields:
-      - name: church
-        type: string
-        required: true
-        entry_title: true
-        enum:
-          - morell
-          - mount-stewart
-          - st-peters-bay
-      - name: type
-        type: string
-        required: true
-        enum:
-          - greeter
-          - reader
-          - cleaner
-      - name: entries
-        type: array
-        fields:
-          - name: date
-            type: string
-            required: true
-            display:
-              description: "ISO date (YYYY-MM-DD)"
-              component: date
-          - name: name
-            type: string
-            required: true
-
-  # ── Homepage (singleton) ───────────────────────────────────────────────────
-  - name: homepage
-    path: "src/content/homepage.json"
-    previewUrl: /
-    format: json
-    operations:
-      create: false
-      destroy: false
-    fields:
-      - name: widgets
-        type: array
-        homogenous: false
-        fields:
-          hero:
-            - name: title
-              type: string
+    - name: churches
+      path: src/content/churches/*.md
+      format: markdown
+      frontmatter_format: yaml
+      fields:
+        - entry_title: true
+          name: title
+          required: true
+          type: string
+        - name: address
+          required: true
+          type: string
+        - name: serviceTime
+          required: true
+          type: string
+        - name: description
+          type: string
+        - display:
+            component: media
+            config:
+                collection: public-images
+          name: image
+          type: string
+      operations:
+        create: false
+        read: true
+        update: true
+        destroy: false
+      previewUrl: /churches/{{filename}}
+    - name: articles
+      path: src/content/articles/*.md
+      format: markdown
+      frontmatter_format: yaml
+      fields:
+        - entry_title: true
+          name: title
+          required: true
+          type: string
+        - display:
+            description: ISO date (YYYY-MM-DD)
+            component: date
+          name: date
+          required: true
+          type: string
+        - display:
+            component: select
+          enum:
+            - announcement
+            - news
+            - reflection
+            - general
+          name: category
+          required: true
+          type: string
+        - default: all
+          display:
+            component: select
+          enum:
+            - morell
+            - mount-stewart
+            - st-peters-bay
+            - all
+          name: church
+          required: true
+          type: string
+        - name: description
+          type: string
+        - default: false
+          name: draft
+          type: boolean
+      previewUrl: /articles/{{filename}}
+    - name: banner
+      path: src/content/banner.md
+      format: markdown
+      frontmatter_format: yaml
+      fields:
+        - default: false
+          name: enabled
+          type: boolean
+        - name: link
+          type: string
+      operations:
+        create: false
+        destroy: false
+      previewUrl: /
+    - name: schedules
+      path: src/content/schedules/*.json
+      format: json
+      fields:
+        - entry_title: true
+          name: church
+          required: true
+          type: string
+        - name: type
+          required: true
+          type: string
+        - display:
+            component: table
+          fields:
+            - display:
+                description: ISO date (YYYY-MM-DD)
+                component: date
+              name: date
               required: true
-            - name: subtitle
               type: string
-            - name: image
+            - name: name
+              required: true
               type: string
-              display:
-                component: media
-                config:
-                  collection: public-images
-            - name: buttons
-              type: array
-              fields:
-                - name: primary
-                  type: boolean
-                  default: false
-                - name: copy
-                  type: string
+          name: entries
+          type: array
+      operations:
+        create: false
+        read: true
+        update: true
+        destroy: false
+      previewUrl: /churches/{{church}}
+    - name: homepage
+      path: src/content/homepage.json
+      format: json
+      fields:
+        - fields:
+            churches:
+                - name: title
                   required: true
-                - name: url
                   type: string
+                - name: subtitle
+                  type: string
+            hero:
+                - name: title
                   required: true
-          news:
-            - name: title
-              type: string
-              required: true
-            - name: subtitle
-              type: string
-          vision:
-            - name: title
-              type: string
-              required: true
-            - name: body
-              type: string
-            - name: quote
-              type: string
-            - name: communityCount
-              type: integer
-            - name: yearsOfGrace
-              type: string
-            - name: ctaTitle
-              type: string
-            - name: ctaDescription
-              type: string
-          churches:
-            - name: title
-              type: string
-              required: true
-            - name: subtitle
-              type: string
-
+                  type: string
+                - name: subtitle
+                  type: string
+                - display:
+                    component: media
+                    config:
+                        collection: public-images
+                  name: image
+                  type: string
+                - fields:
+                    - default: false
+                      name: primary
+                      type: boolean
+                    - name: copy
+                      required: true
+                      type: string
+                    - name: url
+                      required: true
+                      type: string
+                  name: buttons
+                  type: array
+            news:
+                - name: title
+                  required: true
+                  type: string
+                - name: subtitle
+                  type: string
+            vision:
+                - name: title
+                  required: true
+                  type: string
+                - name: body
+                  type: string
+                - name: quote
+                  type: string
+                - name: communityCount
+                  type: integer
+                - name: yearsOfGrace
+                  type: string
+                - name: ctaTitle
+                  type: string
+                - name: ctaDescription
+                  type: string
+          homogenous: false
+          name: widgets
+          type: array
+      operations:
+        create: false
+        destroy: false
+      previewUrl: /
 mediaCollections:
-  - name: public-images
-    path: public/images/**/*
-    embedPathTemplate: /images/{{.FileName}}.{{.Ext}}
-    allowedMimes:
-      - image/jpeg
-      - image/png
-      - image/webp
-      - image/avif
-      - image/gif
+    - name: public-images
+      path: public/images/**/*
+      embedPathTemplate: /images/{{.FileName}}.{{.Ext}}
+      allowedMimes:
+        - image/jpeg
+        - image/png
+        - image/webp
+        - image/avif
+        - image/gif
