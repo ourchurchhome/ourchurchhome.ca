@@ -1,6 +1,6 @@
 ---
 address: 15 School Street, Morell, PEI C0A 1S0
-description: A welcoming faith community in the heart of Morell, Prince Edward Island.
+description: A welcoming faith community in the heart of Morell, Prince Edward Island.a
 serviceTime: Sundays at 10:30 AM
 title: ""
 ---
