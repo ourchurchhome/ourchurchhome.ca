@@ -1,207 +1,169 @@
 version: 1
+
 content_models:
-    - name: churches
-      path: src/content/churches/*.md
-      format: markdown
-      frontmatter_format: yaml
-      fields:
-        - entry_title: true
-          name: title
-          required: true
-          type: string
-        - name: address
-          required: true
-          type: string
-        - name: serviceTime
-          required: true
-          type: string
-        - name: description
-          type: string
-        - display:
-            component: media
-            config:
-                collection: public-images
-          name: image
-          type: string
-      operations:
-        create: false
-        read: true
-        update: true
-        destroy: false
-      preview_url: /churches/{{.Filename}}
-    - name: articles
-      path: src/content/articles/*.md
-      format: markdown
-      frontmatter_format: yaml
-      fields:
-        - entry_title: true
-          name: title
-          required: true
-          type: string
-        - display:
-            description: ISO date (YYYY-MM-DD)
-            component: date
-          name: date
-          required: true
-          type: string
-        - display:
-            component: select
-          enum:
-            - announcement
-            - news
-            - reflection
-            - general
-          name: category
-          required: true
-          type: string
-        - default: all
-          display:
-            component: select
-          enum:
-            - morell
-            - mount-stewart
-            - st-peters-bay
-            - all
-          name: church
-          required: true
-          type: string
-        - name: description
-          type: string
-        - default: false
-          name: draft
-          type: boolean
-      preview_url: /articles/{{.Filename}}
-    - name: banner
-      path: src/content/banner.md
-      format: markdown
-      frontmatter_format: yaml
-      fields:
-        - default: false
-          name: enabled
-          type: boolean
-        - name: link
-          type: string
-      operations:
-        create: false
-        destroy: false
-      preview_url: /
-    - name: schedules
-      path: src/content/schedules/*.json
-      format: json
-      fields:
-        - name: title
-          entry_title: true
-          required: true
-          type: string
-          display:
-            hidden: true
-        - name: church
-          required: true
-          type: string
-          enum:
-            - morell
-            - mount-stewart
-            - st-peters-bay
-        - display:
-            component: select
-          name: type
-          required: true
-          type: string
-          enum:
-            - cleaner
-            - greeter
-            - reader
-        - display:
-            component: table
-          fields:
-            - display:
-                description: ISO date (YYYY-MM-DD)
-                component: date
-              name: date
-              required: true
-              type: string
-            - name: name
-              required: true
-              type: string
-          name: entries
-          type: array
-      operations:
-        create: false
-        read: true
-        update: true
-        destroy: false
-      preview_url: /churches/{{.church}}
-    - name: homepage
-      path: src/content/homepage.json
-      format: json
-      fields:
-        - fields:
-            churches:
-                - name: title
-                  required: true
-                  type: string
-                - name: subtitle
-                  type: string
-            hero:
-                - name: title
-                  required: true
-                  type: string
-                - name: subtitle
-                  type: string
-                - display:
-                    component: media
-                    config:
-                        collection: public-images
-                  name: image
-                  type: string
-                - fields:
-                    - default: false
-                      name: primary
-                      type: boolean
-                    - name: copy
-                      required: true
-                      type: string
-                    - name: url
-                      required: true
-                      type: string
-                  name: buttons
-                  type: array
-            news:
-                - name: title
-                  required: true
-                  type: string
-                - name: subtitle
-                  type: string
-            vision:
-                - name: title
-                  required: true
-                  type: string
-                - name: body
-                  type: string
-                - name: quote
-                  type: string
-                - name: communityCount
-                  type: integer
-                - name: yearsOfGrace
-                  type: string
-                - name: ctaTitle
-                  type: string
-                - name: ctaDescription
-                  type: string
-          homogenous: false
-          name: widgets
-          type: array
-      operations:
-        create: false
-        destroy: false
-      preview_url: /
-media_collections:
-    - name: public-images
-      path: public/images/**/*
-      embed_path_template: /images/{{.Filename}}.{{.Ext}}
-      allowed_mimes:
-        - image/jpeg
-        - image/png
-        - image/webp
-        - image/avif
-        - image/gif
+  - name: churches
+    path: src/content/churches/*.md
+    label: "{{title}}"
+    read: true
+    create: false
+    update: true
+    delete: false
+    fields:
+      - name: title
+        type: string
+        required: true
+      - name: address
+        type: string
+        required: true
+      - name: serviceTime
+        type: string
+        required: true
+      - name: description
+        type: string
+      - name: image
+        type: string
+        display: { component: media, media: public-images }
+
+  - name: articles
+    path: src/content/articles/*.md
+    label: "{{title}}"
+    fields:
+      - name: title
+        type: string
+        required: true
+      - name: date
+        type: string
+        required: true
+        display: { component: date, description: "ISO date (YYYY-MM-DD)" }
+      - name: category
+        type: string
+        required: true
+        enum: [announcement, news, reflection, general]
+        display: { component: select }
+      - name: church
+        type: string
+        required: true
+        enum: [morell, mount-stewart, st-peters-bay, all]
+        display: { component: select }
+      - name: description
+        type: string
+      - name: draft
+        type: boolean
+
+  - name: banner
+    path: src/content/banner.md
+    create: false
+    delete: false
+    fields:
+      - name: enabled
+        type: boolean
+      - name: link
+        type: string
+
+  - name: schedules
+    path: src/content/schedules/*.json
+    label: "{{title}}"
+    read: true
+    create: false
+    update: true
+    delete: false
+    fields:
+      - name: title
+        type: string
+        required: true
+        display: { hidden: true }
+      - name: church
+        type: string
+        required: true
+        enum: [morell, mount-stewart, st-peters-bay]
+      - name: type
+        type: string
+        required: true
+        enum: [cleaner, greeter, reader]
+        display: { component: select }
+      - name: entries
+        type: array
+        of: object
+        display: { component: list }
+        fields:
+          - name: date
+            type: string
+            required: true
+            display: { component: date, description: "ISO date (YYYY-MM-DD)" }
+          - name: name
+            type: string
+            required: true
+
+  - name: homepage
+    path: src/content/homepage.json
+    create: false
+    delete: false
+    fields:
+      - name: widgets
+        type: array
+        display: { component: mixedList }
+        variants:
+          - name: churches
+            fields:
+              - name: title
+                type: string
+                required: true
+              - name: subtitle
+                type: string
+          - name: hero
+            fields:
+              - name: title
+                type: string
+                required: true
+              - name: subtitle
+                type: string
+              - name: image
+                type: string
+                display: { component: media, media: public-images }
+              - name: buttons
+                type: array
+                of: object
+                fields:
+                  - name: primary
+                    type: boolean
+                  - name: copy
+                    type: string
+                    required: true
+                  - name: url
+                    type: string
+                    required: true
+          - name: news
+            fields:
+              - name: title
+                type: string
+                required: true
+              - name: subtitle
+                type: string
+          - name: vision
+            fields:
+              - name: title
+                type: string
+                required: true
+              - name: body
+                type: string
+              - name: quote
+                type: string
+              - name: communityCount
+                type: integer
+              - name: yearsOfGrace
+                type: string
+              - name: ctaTitle
+                type: string
+              - name: ctaDescription
+                type: string
+
+media:
+  - name: public-images
+    path: public/images/**/*
+    public_base: /images
+    mime_types:
+      - image/jpeg
+      - image/png
+      - image/webp
+      - image/avif
+      - image/gif
