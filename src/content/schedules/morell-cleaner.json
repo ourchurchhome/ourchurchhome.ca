@@ -1,7 +1,5 @@
 {
-  "title": "Morell Cleaners",
   "church": "morell",
-  "type": "cleaner",
   "entries": [
     {
       "date": "2026-04-12",
@@ -23,5 +21,7 @@
       "date": "2026-05-03",
       "name": "Edward Doiron"
     }
-  ]
+  ],
+  "title": "Morell Cleaners",
+  "type": "cleaner"
 }
