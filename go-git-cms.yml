@@ -62,7 +62,7 @@ content_models:
       - name: body
         label: Page
         type: string
-        display: { component: "body", source: body }
+        display: { component: "body", source: body, format: markdown, flavor: gfm }
 
   - name: schedules
     path: src/content/schedules/*.json
