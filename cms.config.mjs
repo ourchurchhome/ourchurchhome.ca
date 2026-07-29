@@ -7,4 +7,24 @@ export default {
   // Path this editor is served from. Use a subpath (e.g. "/cms/") when it
   // is mounted under one — assets and in-app URLs are both built from it.
   BASE_PATH: "/admin",
+  plugins: [
+    ...(process.env.CMS_PREVIEW_SERVER || process.env.CMS_PREVIEW_SIDECAR
+      ? [
+          [
+            "@go-git-cms/preview-sidecar",
+            {
+              server: process.env.CMS_PREVIEW_SERVER || process.env.CMS_PREVIEW_SIDECAR,
+              token: process.env.CMS_PREVIEW_TOKEN,
+              collections: {
+                articles: '/articles/{{{route path "src/content/articles"}}}',
+                churches: '/churches/{{{route path "src/content/churches"}}}',
+                homepage: '/',
+                banner: '/'
+              },
+              label: "Preview",
+            },
+          ],
+        ]
+      : []),
+  ]
 };
