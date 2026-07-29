@@ -59,6 +59,10 @@ content_models:
         type: boolean
       - name: link
         type: string
+      - name: body
+        label: Page
+        type: string
+        display: { component: "body", source: body }
 
   - name: schedules
     path: src/content/schedules/*.json
