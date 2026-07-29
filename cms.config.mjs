@@ -1,5 +1,3 @@
-import {} from "@go-git-cms/gitcms-ide"
-
 // Go·Git CMS editor configuration, written by `gitcms-ide init`.
 export default {
   API_URL: "https://app.gogitcms.com",
