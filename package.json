@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "npx @go-git-cms/gitcms-ide build --out ./dist/admin && astro build",
+    "build": "npx @go-git-cms/gitcms-ide build --out ./public/admin && astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
