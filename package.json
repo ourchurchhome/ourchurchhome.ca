@@ -18,7 +18,6 @@
     "@go-git-cms/preview": "^0.2.0",
     "@go-git-cms/preview-astro": "^0.2.0",
     "@go-git-cms/preview-core": "^0.3.0",
-    "@go-git-cms/preview-sidecar": "^0.2.0",
     "@handlewithcare/react-prosemirror": "^3.0.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-form": "^1.28.5",
