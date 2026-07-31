@@ -3,11 +3,15 @@
 // it neither streams drafts nor reloads the frame — edits appear frozen.
 //
 // This site is server-rendered, so a draft is "applied" by re-requesting the
-// page with the new payload in the URL: the middleware picks it up and SSR
-// paints it. We declare liveOverrides so the editor leaves reloading to us —
-// otherwise it would issue its own reload of the *old* URL and every edit
-// would paint twice. The runtime's scroll restore keeps the position across
-// these navigations.
+// page through /api/preview, which re-parks the payload in the __cms_preview
+// cookie and redirects back here. The cookie — not a page-URL query param —
+// must carry the draft on Vercel: the adapter's internal rewrite
+// (?x_astro_path=...) drops the original query string before the middleware
+// sees it, so a payload on the page URL renders stale in production.
+//
+// We declare liveOverrides so the editor leaves reloading to us — otherwise
+// it would issue its own reload of the old URL and every edit would paint
+// twice. The runtime's scroll restore keeps the position across navigations.
 
 import {
   registerPreview,
@@ -16,16 +20,27 @@ import {
   PAYLOAD_PARAM,
 } from '@go-git-cms/preview-core';
 
-// The newest draft already rendered. Seeded from the URL payload so the
-// initial `onDraft` replay of it doesn't trigger a reload loop.
+// Matches PAYLOAD_KEY in preview-core's runtime: where the last live draft is
+// kept for reloads. We read it to baseline what SSR has already rendered.
+const SESSION_PAYLOAD_KEY = '__cms_preview_payload';
+
+// The newest draft already rendered, so replays of it (the runtime re-applies
+// the URL/sessionStorage payload on every load) don't trigger a reload loop.
 let lastIssuedAt = 0;
-const inline = new URLSearchParams(window.location.search).get(PAYLOAD_PARAM);
-if (inline) {
-  try {
-    lastIssuedAt = decodePayload(inline).issuedAt;
-  } catch {
-    // Malformed param — the runtime reports it; treat as no baseline.
+try {
+  const inline = new URLSearchParams(window.location.search).get(PAYLOAD_PARAM);
+  if (inline) lastIssuedAt = decodePayload(inline).issuedAt;
+} catch {
+  // Malformed param — the runtime reports it; treat as no baseline.
+}
+try {
+  const stored = window.sessionStorage.getItem(SESSION_PAYLOAD_KEY);
+  if (stored) {
+    const issuedAt = (JSON.parse(stored) as { issuedAt?: number }).issuedAt ?? 0;
+    if (issuedAt > lastIssuedAt) lastIssuedAt = issuedAt;
   }
+} catch {
+  // sessionStorage unavailable or stale JSON — no baseline.
 }
 
 let pending: number | undefined;
@@ -37,10 +52,11 @@ registerPreview({
   onDraft(payload) {
     if (!payload || payload.issuedAt <= lastIssuedAt) return;
     lastIssuedAt = payload.issuedAt;
-    const url = new URL(window.location.href);
-    url.searchParams.set(PAYLOAD_PARAM, encodePayload(payload));
+    const target = new URL('/api/preview', window.location.origin);
+    target.searchParams.set('redirect', window.location.pathname);
+    target.searchParams.set(PAYLOAD_PARAM, encodePayload(payload));
     // Debounce: keystrokes arrive faster than a round trip; render the latest.
     if (pending) clearTimeout(pending);
-    pending = window.setTimeout(() => window.location.replace(url.toString()), 150);
+    pending = window.setTimeout(() => window.location.replace(target.toString()), 150);
   },
 });

@@ -26,12 +26,19 @@ export function overrideForEntry(
 ): PreviewOverride | null {
   if (!preview || !entry?.filePath) return null;
   const fp = normalize(entry.filePath);
-  return (
+  const match =
     preview.overrides.find((o) => {
       const p = normalize(o.path);
       return p === fp || fp.endsWith(`/${p}`) || p.endsWith(`/${fp}`);
-    }) ?? null
-  );
+    }) ?? null;
+  if (!match && preview.overrides.length > 0) {
+    console.warn(
+      `[preview] no override matched entry "${fp}" — override paths: ${preview.overrides
+        .map((o) => o.path)
+        .join(', ')}`
+    );
+  }
+  return match;
 }
 
 /**
@@ -71,7 +78,14 @@ export function mergeDraftData<S extends z.ZodTypeAny>(
   ov: PreviewOverride
 ): z.infer<S> {
   const parsed = schema.safeParse({ ...(published as Record<string, unknown>), ...ov.fields });
-  return parsed.success ? parsed.data : published;
+  if (!parsed.success) {
+    console.warn(
+      `[preview] draft for "${ov.path}" failed schema validation — rendering published values:`,
+      JSON.stringify(parsed.error.issues, null, 2)
+    );
+    return published;
+  }
+  return parsed.data;
 }
 
 let processor: Promise<MarkdownRenderer> | undefined;

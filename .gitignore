@@ -25,3 +25,5 @@ pnpm-debug.log*
 
 # gogitcms
 public/admin
+.vercel
+.env*
