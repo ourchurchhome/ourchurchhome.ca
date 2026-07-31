@@ -10,6 +10,8 @@ export default {
   plugins: [
     ...(process.env.CMS_PREVIEW_SERVER || process.env.CMS_PREVIEW_SIDECAR
       ? [
+          // Sidecar preview (SSG path): materialises drafts into a checkout and
+          // runs `astro dev` against them. Used when a preview server is up.
           [
             "@go-git-cms/preview-sidecar",
             {
@@ -25,6 +27,23 @@ export default {
             },
           ],
         ]
-      : []),
+      : [
+          // Draft-mode preview (SSR path): the site itself renders the draft.
+          // URLs go through /api/preview, which verifies the payload, sets the
+          // Vercel ISR bypass + preview cookies, and redirects to the page.
+          [
+            "@go-git-cms/preview",
+            {
+              baseUrl: process.env.CMS_PREVIEW_BASE_URL || "http://localhost:4321",
+              collections: {
+                articles: '/api/preview?redirect=/articles/{{{route path "src/content/articles"}}}',
+                churches: '/api/preview?redirect=/churches/{{{route path "src/content/churches"}}}',
+                homepage: '/api/preview?redirect=/',
+                banner: '/api/preview?redirect=/',
+              },
+              label: "Preview",
+            },
+          ],
+        ]),
   ]
 };
