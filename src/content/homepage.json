@@ -1,22 +1,8 @@
 {
   "widgets": [
     {
-      "buttons": [
-        {
-          "copy": "Visit a Church",
-          "primary": true,
-          "url": "/churches/morell"
-        },
-        {
-          "copy": "News \u0026 Updates",
-          "primary": false,
-          "url": "/articles"
-        }
-      ],
-      "image": "/images/image_fec708d5ed05.jpg",
-      "subtitle": "A place of grace, heritage, and hope across Mount Stewart, Morell, and St. Peters Bay. Join us as we journey together in faith.",
-      "title": "Welcome Home to Community",
-      "type": "hero"
+      "_variant": "news",
+      "title": "Combined service  - 30 August - Morell - 10am"
     },
     {
       "subtitle": "Latest",
