@@ -105,19 +105,11 @@ content_models:
     create: false
     delete: false
     fields:
-      # Mirrors the `widgets` discriminated union in src/content/schemas.ts.
-      # Variant names must equal the `type` literals there, and each variant's
-      # fields must match that member's shape.
-      #
-      # NOTE: the mixedList control writes the chosen variant name to `_variant`
-      # (hardcoded in @go-git-cms/design-system) rather than to `type`. The
-      # homepage schema normalises `_variant` -> `type` on read so saves from
-      # the editor still validate. Keep the variant order below in sync with
-      # the schema: the first variant is what "Add item" creates.
       - name: widgets
         type: array
         of: object
         display: { component: mixedList }
+        discriminator: type
         variants:
           - name: hero
             label: Hero
