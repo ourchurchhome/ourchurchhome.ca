@@ -116,6 +116,25 @@ export const kitchenSinkSchema = z.object({
 });
 
 /**
+ * The CMS's mixed-list control (go-git-cms.yml → `display: { component: mixedList }`)
+ * hardcodes `_variant` as the key it stores each item's variant name under; it
+ * offers no way to configure that key. This schema — and the homepage renderer,
+ * which switches on `widget.type` — discriminate on `type` instead.
+ *
+ * So normalise on the way in: an item saved by the editor arrives as
+ * `{ _variant: "hero", ... }` and is read as `{ type: "hero", ... }`. Without
+ * this, every save from the CMS writes a widget the build rejects with
+ * "No matching discriminator". Keep `type` as the canonical on-disk key.
+ */
+const widgetVariantKey = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess((value) => {
+    if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+    const { _variant, ...rest } = value as Record<string, unknown>;
+    if (_variant === undefined) return value;
+    return rest.type === undefined ? { ...rest, type: _variant } : rest;
+  }, schema);
+
+/**
  * Homepage singleton schema — controls the editable content for each section
  * of the homepage. Each widget represents one page section.
  *
@@ -126,7 +145,7 @@ export const kitchenSinkSchema = z.object({
  *   churches — "Churches" section header (church cards are pulled automatically)
  */
 export const homepageSchema = z.object({
-  widgets: z.array(z.discriminatedUnion('type', [
+  widgets: z.array(widgetVariantKey(z.discriminatedUnion('type', [
     // ── Hero ─────────────────────────────────────────────────────────────────
     z.object({
       type: z.literal('hero'),
@@ -162,7 +181,7 @@ export const homepageSchema = z.object({
       title: z.string(),
       subtitle: z.string().optional(),
     }),
-  ])).optional(),
+  ]))).optional(),
 });
 
 /**

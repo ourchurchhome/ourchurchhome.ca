@@ -1,35 +1,6 @@
 ---
-enabled: false
-link: https://ourchurchhome-ca-sage.vercel.app/
+enabled: true
+link: https://ourchurchhome.ca/articles/combined-service-august-2026
 ---
-We have a new website
 
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
-
-We have a new website
+**Combined service** — Sunday, August 30 at 10 AM in Morell
