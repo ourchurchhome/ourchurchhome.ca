@@ -6,7 +6,7 @@
 // match an override to a content collection entry and compose the draft on top
 // of the published values.
 
-import type { PreviewOverride, PreviewPayload } from '@go-git-cms/preview-core';
+import type { PreviewOverride, PreviewPayload } from '@gogitcms/preview-core';
 import { createMarkdownProcessor, type MarkdownRenderer } from '@astrojs/markdown-remark';
 import type { z } from 'zod';
 

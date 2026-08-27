@@ -18,7 +18,7 @@ import {
   encodePayload,
   decodePayload,
   PAYLOAD_PARAM,
-} from '@go-git-cms/preview-core';
+} from '@gogitcms/preview-core';
 
 // Matches PAYLOAD_KEY in preview-core's runtime: where the last live draft is
 // kept for reloads. We read it to baseline what SSR has already rendered.

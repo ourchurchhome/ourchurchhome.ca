@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "astro dev",
-    "build": "npx @go-git-cms/gitcms-ide build --out ./public/admin && astro build",
+    "build": "npx @gogitcms/editor build --out ./public/admin && astro build",
     "preview": "astro preview",
     "astro": "astro"
   },
@@ -15,9 +15,8 @@
     "@astrojs/markdown-remark": "^7.2.2",
     "@astrojs/react": "^5.0.2",
     "@astrojs/vercel": "^10.0.3",
-    "@go-git-cms/preview": "^0.2.0",
-    "@go-git-cms/preview-astro": "^0.2.0",
-    "@go-git-cms/preview-core": "^0.3.0",
+    "@gogitcms/preview": "^0.3.0",
+    "@gogitcms/preview-astro": "^0.3.0",
     "@handlewithcare/react-prosemirror": "^3.0.0",
     "@tailwindcss/vite": "^4.2.2",
     "@tanstack/react-form": "^1.28.5",

@@ -1,7 +1,7 @@
 export const prerender = false;
 
 import type { APIRoute } from 'astro';
-import { previewEntryRoute } from '@go-git-cms/preview-astro';
+import { previewEntryRoute } from '@gogitcms/preview-astro';
 import { setBypassCookie } from '../../cms/lib/session';
 
 /**
