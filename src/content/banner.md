@@ -2,4 +2,4 @@
 enabled: true
 link: https://ourchurchhome.ca/articles/combined-service-august-2026
 ---
-**Combined service** — Sunday, August 30 at 10 AM in Morell
+**Next Combined service** — Sunday, September 27 Mt. Stewart at 10 am
