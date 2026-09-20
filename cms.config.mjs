@@ -15,10 +15,9 @@
  * Normalized here rather than trusted from the environment, because that is
  * exactly how it broke: CMS_PREVIEW_BASE_URL was set to the apex.
  */
-const previewBaseUrl = (process.env.CMS_PREVIEW_BASE_URL || "http://localhost:4321").replace(
-  /^(https?:\/\/)ourchurchhome\.ca/,
-  "$1www.ourchurchhome.ca"
-);
+const previewBaseUrl = process.env.NODE_ENV === "production" ?
+  "https://ourchurchhome.ca" :
+  "http://localhost:4321"
 
 export default {
   API_URL: "https://app.gogitcms.com",
